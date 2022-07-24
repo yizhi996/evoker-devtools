@@ -2,6 +2,7 @@ import { Ref, watch } from 'vue'
 import { Bridge, useBridge } from './useBridge'
 import { AppService } from './useService'
 import { emittedOnce, webviewLoadScript, webviewLoadStyle } from '../utils'
+import { ipcRenderer } from 'electron'
 
 export interface Page {
   pageId: number
@@ -22,7 +23,6 @@ export function usePage(service: AppService, webviewEl: Ref<WebView | undefined>
     webView: webviewEl,
     bridge,
     mount: (path: string) => {
-      console.log('mt', path)
       page.path = path
       service.bridge.subscribeHandler('PAGE_BEGIN_MOUNT', {
         pageId: page.pageId,
@@ -42,7 +42,13 @@ export function usePage(service: AppService, webviewEl: Ref<WebView | undefined>
         await emittedOnce(webview, 'dom-ready')
 
         webview.executeJavaScript(
-          `globalThis.__Config = { appName: '', appIcon: '', platform: 'devtools', env: 'webview', webViewId: ${page.pageId} }`
+          `window.webViewId = ${page.pageId}
+          globalThis.__Config = { 
+            appName: '', 
+            appIcon: '',
+            platform: 'devtools', 
+            env: 'webview',
+            webViewId: ${page.pageId} }`
         )
         await webviewLoadScript(webview, './devtools.global.js')
         await webviewLoadScript(webview, './webview.global.js')

@@ -5,7 +5,7 @@ const log = msg => console.log(`[Evoker devtools] ${msg}`)
 
 const warn = msg => console.warn(`[Evoker devtools] ${msg}`)
 
-export type Client = ws & { pageId: number }
+export type Client = ws & { isService: boolean; pageId: number }
 
 const enum HeartBeatMessage {
   PING = 'ping',
@@ -66,6 +66,6 @@ export function createWebSocketServer(options: CreateWebSockerServerOptions) {
 
   return {
     wss: webSocketServer,
-    clients: () => Array.from(webSocketServer.clients)
+    clients: () => Array.from(webSocketServer.clients) as Client[]
   }
 }

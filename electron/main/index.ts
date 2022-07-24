@@ -3,29 +3,8 @@ import { release } from 'os'
 import { join } from 'path'
 import './store'
 import './menu'
-import { loadSDK } from './load'
 import { createWebSocketClient } from './server/dev'
-import { createWebSocketServer } from './server'
-
-export const enum Commands {
-  APP_SERVICE_INVOKE = 'APP_SERVICE_INVOKE',
-  APP_SERVICE_PUBLISH = 'APP_SERVICE_PUBLISH',
-  WEB_VIEW_INVOKE = 'WEB_VIEW_INVOKE',
-  WEB_VIEW_PUBLISH = 'WEB_VIEW_PUBLISH',
-  SET_PAGE_ID = 'SET_PAGE_ID'
-}
-
-export interface InvokeArgs {
-  event: string
-  params: string
-  callbackId: number
-}
-
-export interface PublishArgs {
-  event: string
-  params: string
-  webViewId: number
-}
+import './bridge'
 
 // Disable GPU Acceleration for Windows 7
 if (release().startsWith('6.1')) app.disableHardwareAcceleration()
@@ -55,33 +34,6 @@ const url = `http://${process.env['VITE_DEV_SERVER_HOST']}:${process.env['VITE_D
 const indexHtml = join(ROOT_PATH.dist, 'index.html')
 
 const devClient = createWebSocketClient()
-
-const wss = createWebSocketServer({
-  onConnect: () => {},
-  onDisconnect: () => {},
-  onRecv: (client, message) => {
-    const { command, args }: { command: Commands; args: InvokeArgs | PublishArgs } =
-      JSON.parse(message)
-    console.log('recv', command)
-    switch (command) {
-      case Commands.APP_SERVICE_INVOKE:
-        break
-      case Commands.APP_SERVICE_PUBLISH:
-        const { webViewId } = args as PublishArgs
-        console.log(webViewId)
-        const page = wss.clients().find(c => c.pageId === webViewId)
-        page && page.send(JSON.stringify({ exec: 'SUBSCRIBE_HANDLER', args }))
-        break
-      case Commands.WEB_VIEW_INVOKE:
-        break
-      case Commands.WEB_VIEW_PUBLISH:
-        break
-      case Commands.SET_PAGE_ID:
-        client.pageId = args as any
-        break
-    }
-  }
-})
 
 async function createWindow() {
   win = new BrowserWindow({
