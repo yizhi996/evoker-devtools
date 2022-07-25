@@ -132,4 +132,8 @@ const paths = ref<{ path: string }[]>([{ path: 'preload' }])
 service.onLoaded(page => {
   paths.value[0].path = page.path
 })
+
+service.onPush(page => {
+  paths.value.push(page)
+})
 </script>

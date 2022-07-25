@@ -45,17 +45,26 @@ export interface AppService extends Electron.WebviewTag {
   config: AppConfig
   bridge: Bridge
   pages: Ref<Page[]>
-  findPage: (id: number) => Page | null
+  findPage: (pageId: number) => Page | undefined
   genPageId: () => number
   onLoaded: (callback: (page: { path: string }) => void) => void
+  onPush: (callback: (page: { path: string }) => void) => void
+  push: (url: string) => void
 }
 
+export let globalAppService: AppService | undefined
+
 export function useService(appId: string, containerEl: Ref<Electron.WebviewTag | undefined>) {
+  if (globalAppService) {
+    return globalAppService
+  }
   const config = ref<AppConfig>()
 
   const pages = ref<Page[]>([])
 
   let _onLoadedCallback: (page: { path: string }) => void
+
+  let _onPushCallback: (page: { path: string }) => void
 
   const evalScript = (script: string) => {
     const container = containerEl.value!
@@ -127,15 +136,23 @@ export function useService(appId: string, containerEl: Ref<Electron.WebviewTag |
     onLoaded: (callback: (page: { path: string }) => void) => {
       _onLoadedCallback = callback
     },
-    findPage: (id: number) => {
-      return pages.value.find(p => p.id === id)
+    onPush: (callback: (page: { path: string }) => void) => {
+      _onPushCallback = callback
+    },
+    findPage: (pageId: number) => {
+      return pages.value.find(p => p.pageId === pageId)
     },
     genPageId: () => {
       return ++pageId
+    },
+    push: (url: string) => {
+      _onPushCallback && _onPushCallback({ path: url })
     }
   }
 
   appService.bridge = useBridge(appService, containerEl)
+
+  globalAppService = appService
 
   return appService
 }

@@ -11,7 +11,7 @@ const enum Methods {
 export function createWebSocketClient(port: number = 5173) {
   const client = new ws.WebSocket(`ws://127.0.0.1:${port}`)
   client.on('connection', () => {
-    console.log('connes')
+    console.log('connected')
   })
 
   client.on('error', err => {

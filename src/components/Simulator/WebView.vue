@@ -19,11 +19,11 @@ const { mount } = usePage(props.service, webviewEl)
 
 watch(
   () => props.path,
-  (newValue, oldValue) => {
-    console.log(newValue, oldValue)
-    if (oldValue === 'preload') {
+  newValue => {
+    if (newValue !== 'preload') {
       mount(newValue)
     }
-  }
+  },
+  { immediate: true }
 )
 </script>

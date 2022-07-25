@@ -17,6 +17,7 @@ declare module '@vue/runtime-core' {
     NavigationBar: typeof import('./src/components/Simulator/NavigationBar.vue')['default']
     Notch: typeof import('./src/components/Simulator/Notch.vue')['default']
     Page: typeof import('./src/components/Simulator/Page.vue')['default']
+    Service: typeof import('./src/components/Simulator/Service.vue')['default']
     Simulator: typeof import('./src/components/Simulator/Simulator.vue')['default']
     SplitView: typeof import('./src/components/SplitView.vue')['default']
     StatusBar: typeof import('./src/components/Simulator/StatusBar.vue')['default']

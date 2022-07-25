@@ -4,7 +4,7 @@ import { join } from 'path'
 import './store'
 import './menu'
 import { createWebSocketClient } from './server/dev'
-import './bridge'
+import { createBridgeCenter } from './bridge'
 
 // Disable GPU Acceleration for Windows 7
 if (release().startsWith('6.1')) app.disableHardwareAcceleration()
@@ -32,6 +32,8 @@ const preload = join(__dirname, '../preload/index.js')
 // 🚧 Use ['ENV_NAME'] avoid vite:define plugin
 const url = `http://${process.env['VITE_DEV_SERVER_HOST']}:${process.env['VITE_DEV_SERVER_PORT']}`
 const indexHtml = join(ROOT_PATH.dist, 'index.html')
+
+const bridgeCenter = createBridgeCenter({ appId: 'com.evokerdev.example' })
 
 const devClient = createWebSocketClient()
 
