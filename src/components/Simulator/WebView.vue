@@ -1,5 +1,5 @@
 <template>
-  <webview ref="webviewEl" class="w-full h-full" :src="src"></webview>
+  <webview ref="webviewEl" class="w-full h-full bg-white" :src="src"></webview>
 </template>
 
 <script setup lang="ts">

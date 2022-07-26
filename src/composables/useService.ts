@@ -4,6 +4,11 @@ import fs from 'fs'
 import { getAppPath, webviewLoadScript } from '../utils'
 import { useBridge, Bridge } from './useBridge'
 import { Page } from './usePage'
+import { extend } from '@vue/shared'
+
+type Required<T> = {
+  [P in keyof T]-?: T[P]
+}
 
 export interface AppConfig {
   appId: string
@@ -19,11 +24,11 @@ interface AppPageInfo {
 }
 
 interface AppStyle {
-  backgroundColor: string
-  navigationBarBackgroundColor: string
-  navigationBarTextStyle: 'black' | 'white'
-  navigationBarTitleText: string
-  navigationStyle: 'default' | 'custom'
+  backgroundColor?: string
+  navigationBarBackgroundColor?: string
+  navigationBarTextStyle?: 'black' | 'white'
+  navigationBarTitleText?: string
+  navigationStyle?: 'default' | 'custom'
 }
 
 export interface AppTabBar {
@@ -47,9 +52,17 @@ export interface AppService extends Electron.WebviewTag {
   pages: Ref<Page[]>
   findPage: (pageId: number) => Page | undefined
   genPageId: () => number
-  onLoaded: (callback: (page: { path: string }) => void) => void
-  onPush: (callback: (page: { path: string }) => void) => void
+  onLoaded: (callback: (page: PageInfo) => void) => void
+  onPush: (callback: (page: PageInfo) => void) => void
+  onBack: (callback: (delta: number) => void) => void
   push: (url: string) => void
+  back: (delta: number) => void
+}
+
+export interface PageInfo {
+  path: string
+  style: Required<AppStyle>
+  isTabBar: boolean
 }
 
 export let globalAppService: AppService | undefined
@@ -62,9 +75,11 @@ export function useService(appId: string, containerEl: Ref<Electron.WebviewTag |
 
   const pages = ref<Page[]>([])
 
-  let _onLoadedCallback: (page: { path: string }) => void
+  let _onLoadedCallback: (page: PageInfo) => void
 
-  let _onPushCallback: (page: { path: string }) => void
+  let _onPushCallback: (page: PageInfo) => void
+
+  let _onBackCallback: (delta: number) => void
 
   const evalScript = (script: string) => {
     const container = containerEl.value!
@@ -107,9 +122,39 @@ export function useService(appId: string, containerEl: Ref<Electron.WebviewTag |
     await webviewLoadScript(container, `../App/${appId}/dist/app-service.js`)
 
     setTimeout(() => {
-      const page = getFirstPage()
-      _onLoadedCallback && _onLoadedCallback(page)
+      _onLoadedCallback && _onLoadedCallback(getFirstPage()!)
     }, 200)
+  }
+
+  const getWindowInfo = () => {
+    const { window } = config.value!
+    return {
+      backgroundColor: window?.backgroundColor || '#ffffff',
+      navigationBarBackgroundColor: window?.navigationBarBackgroundColor || '#ffffff',
+      navigationBarTextStyle: window?.navigationBarTextStyle || 'black',
+      navigationBarTitleText: window?.navigationBarTitleText || '',
+      navigationStyle: window?.navigationStyle || 'default'
+    }
+  }
+
+  const getPageInfo = (page: AppPageInfo) => {
+    const { tabBar } = config.value!
+    let isTabBar = false
+    if (tabBar && tabBar.list) {
+      const i = tabBar.list.findIndex(p => p.path === page.path)
+      isTabBar = i > -1
+    }
+
+    let style = getWindowInfo()
+
+    if (page.style) {
+      extend(style, page.style)
+    }
+    return {
+      path: page.path,
+      style,
+      isTabBar
+    } as PageInfo
   }
 
   const getFirstPage = () => {
@@ -117,12 +162,16 @@ export function useService(appId: string, containerEl: Ref<Electron.WebviewTag |
 
     if (tabBar && tabBar.list && tabBar.list.length) {
       const first = tabBar.list[0]
-      return { path: first.path }
-    } else if (pages.length) {
-      return { path: pages[0].path }
+      const page = pages.find(p => p.path === first.path)
+      if (page) {
+        return getPageInfo(page)
+      }
+    }
+
+    if (pages.length) {
+      return getPageInfo(pages[0])
     } else {
       console.error('app.json pages cannot be empty')
-      return { path: '' }
     }
   }
 
@@ -133,11 +182,14 @@ export function useService(appId: string, containerEl: Ref<Electron.WebviewTag |
     pages,
     loadAppService,
     evalScript,
-    onLoaded: (callback: (page: { path: string }) => void) => {
+    onLoaded: (callback: (page: PageInfo) => void) => {
       _onLoadedCallback = callback
     },
-    onPush: (callback: (page: { path: string }) => void) => {
+    onPush: (callback: (page: PageInfo) => void) => {
       _onPushCallback = callback
+    },
+    onBack: (callback: (delta: number) => void) => {
+      _onBackCallback = callback
     },
     findPage: (pageId: number) => {
       return pages.value.find(p => p.pageId === pageId)
@@ -146,7 +198,15 @@ export function useService(appId: string, containerEl: Ref<Electron.WebviewTag |
       return ++pageId
     },
     push: (url: string) => {
-      _onPushCallback && _onPushCallback({ path: url })
+      const { pages } = config.value!
+      const page = pages.find(p => p.path === url)
+      if (page) {
+        _onPushCallback && _onPushCallback(getPageInfo(page))
+      } else {
+      }
+    },
+    back: (delta: number = 1) => {
+      _onBackCallback && _onBackCallback(delta)
     }
   }
 

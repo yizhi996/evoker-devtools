@@ -2,7 +2,8 @@ import { ipcRenderer } from 'electron'
 import { globalAppService } from '../composables/useService'
 
 const apis: { [x: string]: Function } = {
-  navigateTo
+  navigateTo,
+  navigateBack
 }
 
 interface NavigateToParams {
@@ -14,6 +15,17 @@ function navigateTo(params: NavigateToParams) {
     return
   }
   globalAppService.push(params.url)
+}
+
+interface NavigateBackParams {
+  delta?: number
+}
+
+function navigateBack(params: NavigateBackParams) {
+  if (!globalAppService) {
+    return
+  }
+  globalAppService.back(params.delta || 1)
 }
 
 ipcRenderer.on('API_INVOKE', (_, event: string, params: Record<string, any>) => {

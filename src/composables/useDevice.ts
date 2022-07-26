@@ -1,5 +1,5 @@
 import { ipcRenderer, IpcRendererEvent } from 'electron'
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, reactive } from 'vue'
 
 export const DEVICES = ['iPhone 6', 'iPhone X']
 
@@ -21,25 +21,29 @@ interface Size {
   height: number
 }
 
-type DeviceOnChangeCallback = (size: Size, scale: number, iphonex: boolean) => void
+const deviceInfo = reactive({
+  device: DEVICES[1],
+  width: SIZE[DEVICES[1]].width,
+  height: SIZE[DEVICES[1]].height,
+  scale: SCALES[0],
+  iphonex: false
+})
+
+export { deviceInfo }
 
 export function useDevice() {
   const Event = 'device-menu-command'
 
-  const device = ref(DEVICES[0])
-  const scale = ref(SCALES[0])
-
-  let _callback: DeviceOnChangeCallback | null
-
   const modify = (event: IpcRendererEvent, command: string, value: any) => {
     switch (command) {
       case 'device':
-        device.value = value
-        _callback && _callback(SIZE[device.value], scale.value, device.value === 'iPhone X')
+        deviceInfo.device = value
+        deviceInfo.width = SIZE[value].width
+        deviceInfo.height = SIZE[value].height
+        deviceInfo.iphonex = value === 'iPhone X'
         break
       case 'scale':
-        scale.value = value
-        _callback && _callback(SIZE[device.value], scale.value, device.value === 'iPhone X')
+        deviceInfo.scale = value
         break
       default:
         break
@@ -49,9 +53,13 @@ export function useDevice() {
   ipcRenderer.on(Event, modify)
 
   onMounted(async () => {
-    device.value = (await ipcRenderer.invoke('getStoreValue', 'k_device')) || DEVICES[0]
-    scale.value = (await ipcRenderer.invoke('getStoreValue', 'k_device_scale')) || SCALES[0]
-    _callback && _callback(SIZE[device.value], scale.value, device.value === 'iPhone X')
+    const device = (await ipcRenderer.invoke('getStoreValue', 'k_device')) || DEVICES[1]
+    const scale = (await ipcRenderer.invoke('getStoreValue', 'k_device_scale')) || SCALES[0]
+    deviceInfo.device = device
+    deviceInfo.width = SIZE[device].width
+    deviceInfo.height = SIZE[device].height
+    deviceInfo.scale = scale
+    deviceInfo.iphonex = device === 'iPhone X'
   })
 
   onUnmounted(() => {
@@ -59,10 +67,6 @@ export function useDevice() {
   })
 
   return {
-    device,
-    scale,
-    onChange: (callback: DeviceOnChangeCallback) => {
-      _callback = callback
-    }
+    deviceInfo
   }
 }

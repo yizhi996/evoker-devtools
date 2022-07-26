@@ -11,6 +11,7 @@ declare module '@vue/runtime-core' {
     ElIcon: typeof import('element-plus/es')['ElIcon']
     HelloWorld: typeof import('./src/components/HelloWorld.vue')['default']
     HomeIndicator: typeof import('./src/components/Simulator/HomeIndicator.vue')['default']
+    IEpArrowLeftBold: typeof import('~icons/ep/arrow-left-bold')['default']
     IEpCaretBottom: typeof import('~icons/ep/caret-bottom')['default']
     IEpCircleCheckFilled: typeof import('~icons/ep/circle-check-filled')['default']
     IEpUpload: typeof import('~icons/ep/upload')['default']
@@ -22,6 +23,7 @@ declare module '@vue/runtime-core' {
     SplitView: typeof import('./src/components/SplitView.vue')['default']
     StatusBar: typeof import('./src/components/Simulator/StatusBar.vue')['default']
     TabBar: typeof import('./src/components/Simulator/TabBar.vue')['default']
+    ToolsBar: typeof import('./src/components/ToolsBar.vue')['default']
     WebView: typeof import('./src/components/Simulator/WebView.vue')['default']
   }
 }

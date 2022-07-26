@@ -16,3 +16,16 @@ export function navigateTo(service: AppService, bridge: Bridge, args: InvokeArgs
 
   bridge.invokeCallbackSuccess(args)
 }
+
+interface NavigateBackParams {
+  delta?: number
+}
+
+export function navigateBack(service: AppService, bridge: Bridge, args: InvokeArgs) {
+  const params: NavigateBackParams = JSON.parse(args.params)
+
+  const win = BrowserWindow.getAllWindows()[0]
+  win.webContents.send(`API_INVOKE`, args.event, params)
+
+  bridge.invokeCallbackSuccess(args)
+}
