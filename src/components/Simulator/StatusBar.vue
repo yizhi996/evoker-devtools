@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full bg-white flex items-center" :style="{ height }">
+  <div class="w-full flex items-center" :style="{ height }">
     <span class="ml-6 text-sm cursor-default">{{ date }}</span>
     <Notch v-if="haveNotch"></Notch>
   </div>

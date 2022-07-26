@@ -8,52 +8,53 @@
         <div class="relative bg-white overflow-hidden" :style="simulatorStyles">
           <webview
             ref="serviceEl"
-            class="absolute top-0 left-0"
-            :style="{
-              width: deviceInfo.width + 'px',
-              height: deviceInfo.height + 'px'
-            }"
+            class="absolute top-0 left-0 w-full h-full"
             src="about:blank"
           ></webview>
-
-          <StatusBar
-            :safe-area-inset="safeAreaInsets.top"
-            :have-notch="deviceInfo.iphonex"
-          ></StatusBar>
-
-          <NavigationBar
-            v-for="(page, i) of pages"
-            :key="i"
-            :page="page"
-            :config="service.config"
-            :show-back="pages.length > 1"
-            @back="onBack"
-          ></NavigationBar>
-
-          <TransitionGroup name="push">
-            <WebView
-              class="absolute"
-              v-for="(page, i) of pages"
-              :key="i"
+          <template v-if="pages.length">
+            <StatusBar
+              :safe-area-inset="safeAreaInsets.top"
+              :have-notch="deviceInfo.iphonex"
               :style="{
-                width: deviceInfo.width + 'px',
-                height: sizeInfo.webViewHeight + 'px',
-                top: sizeInfo.navigationBarHeight + 'px'
+                'background-color': pages[pages.length - 1].style.navigationBarBackgroundColor
               }"
-              :service="service"
-              :path="page.path"
-            ></WebView>
-          </TransitionGroup>
+            ></StatusBar>
 
-          <TabBar
-            class="absolute left-0 bottom-0"
-            v-show="service.config.tabBar"
-            :config="service.config"
-            :current="0"
-            :safe-area-inset="safeAreaInsets.bottom"
-          ></TabBar>
+            <NavigationBar
+              v-for="(page, i) of pages"
+              class="absolute"
+              :key="i"
+              :page="page"
+              :config="service.config"
+              :show-back="pages.length > 1"
+              @back="onBack"
+            ></NavigationBar>
 
-          <HomeIndicator v-if="deviceInfo.iphonex"></HomeIndicator>
+            <TransitionGroup name="push">
+              <WebView
+                class="absolute"
+                v-for="(page, i) of pages"
+                :key="i"
+                :style="{
+                  width: deviceInfo.width + 'px',
+                  height: pageSizeInfo.webViewHeight + 'px',
+                  top: pageSizeInfo.navigationBarHeight + 'px'
+                }"
+                :service="service"
+                :path="page.path"
+              ></WebView>
+            </TransitionGroup>
+
+            <TabBar
+              class="absolute left-0 bottom-0"
+              v-show="service.config.tabBar && pages[pages.length - 1].isTabBar"
+              :config="service.config"
+              :current="0"
+              :safe-area-inset="safeAreaInsets.bottom"
+            ></TabBar>
+
+            <HomeIndicator v-if="deviceInfo.iphonex"></HomeIndicator>
+          </template>
         </div>
       </div>
       <webview ref="debuggerEl" class="w-2/3 h-full" src="about:blank"></webview>
@@ -63,7 +64,7 @@
 
 <script setup lang="ts">
 import { ipcRenderer } from 'electron'
-import { computed, nextTick, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useService, PageInfo } from '../../composables/useService'
 import NavigationBar from './NavigationBar.vue'
 import StatusBar from './StatusBar.vue'
@@ -105,11 +106,16 @@ const safeAreaInsets = computed(() => {
       }
 })
 
-const sizeInfo = computed(() => {
+const pageSizeInfo = computed(() => {
   const config = service.config
   const navigationBarHeight = safeAreaInsets.value.top + 44
-  const tabBarHeight =
-    config?.tabBar && config.tabBar.list.length ? 44 + safeAreaInsets.value.bottom : 0
+
+  let tabBarHeight = 0
+  const last = pages.value[pages.value.length - 1]
+  if (last.isTabBar) {
+    tabBarHeight =
+      config?.tabBar && config.tabBar.list.length ? 44 + safeAreaInsets.value.bottom : 0
+  }
 
   const webViewHeight = deviceInfo.height - navigationBarHeight - tabBarHeight
   return {
@@ -131,24 +137,6 @@ onMounted(async () => {
     ipcRenderer.send('open-devtools', targetId, devtoolsId)
   })
 })
-
-// onChange((size, scale, iphonex) => {
-//   isIPhoneX.value = iphonex
-//   sizeInfo.width = size.width
-//   sizeInfo.height = size.height
-
-//   const config = service.config
-//   sizeInfo.navigationBarHeight = safeAreaInsets.value.top + 44
-//   const tabBarHeight =
-//     config?.tabBar && config.tabBar.list.length ? 44 + safeAreaInsets.value.bottom : 0
-
-//   sizeInfo.webViewHeight = size.height - sizeInfo.navigationBarHeight - tabBarHeight
-//   simulatorStyles.value = `width: ${size.width}px; height: ${size.height}px; border-radius: ${
-//     iphonex ? 30 : 0
-//   }px; transform: scale(${scale / 100});transform-origin: 50% 0;margin-bottom: ${
-//     window.innerHeight - 40 - size.height - 44
-//   }px;`
-// })
 
 const pages = ref<PageInfo[]>([])
 
