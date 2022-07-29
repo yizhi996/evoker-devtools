@@ -1,30 +1,52 @@
 import { ipcRenderer, IpcRendererEvent } from 'electron'
 import { onMounted, onUnmounted, reactive } from 'vue'
 
-export const DEVICES = ['iPhone 6', 'iPhone X']
+export const DEVICE_NAMES = ['iPhone 6', 'iPhone X']
 
 export const SCALES = [100, 85, 75, 50]
 
-const SIZE: Record<string, Size> = {
+const DEVICES: Record<string, Device> = {
   'iPhone 6': {
+    name: 'iPhone 6',
     width: 375,
-    height: 667
+    height: 667,
+    scale: 2,
+    safeAreaInsets: {
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0
+    }
   },
   'iPhone X': {
+    name: 'iPhone X',
     width: 375,
-    height: 812
+    height: 812,
+    scale: 3,
+    safeAreaInsets: {
+      top: 44,
+      bottom: 34,
+      left: 0,
+      right: 0
+    }
   }
 }
 
-interface Size {
+interface Device {
+  name: string
   width: number
   height: number
+  scale: number
+  safeAreaInsets: {
+    top: number
+    bottom: number
+    left: number
+    right: number
+  }
 }
 
 const deviceInfo = reactive({
-  device: DEVICES[1],
-  width: SIZE[DEVICES[1]].width,
-  height: SIZE[DEVICES[1]].height,
+  device: DEVICES[DEVICE_NAMES[1]],
   scale: SCALES[0],
   iphonex: false
 })
@@ -37,9 +59,7 @@ export function useDevice() {
   const modify = (event: IpcRendererEvent, command: string, value: any) => {
     switch (command) {
       case 'device':
-        deviceInfo.device = value
-        deviceInfo.width = SIZE[value].width
-        deviceInfo.height = SIZE[value].height
+        deviceInfo.device = DEVICES[value]
         deviceInfo.iphonex = value === 'iPhone X'
         break
       case 'scale':
@@ -53,13 +73,12 @@ export function useDevice() {
   ipcRenderer.on(Event, modify)
 
   onMounted(async () => {
-    const device = (await ipcRenderer.invoke('getStoreValue', 'k_device')) || DEVICES[1]
+    const deviceName = (await ipcRenderer.invoke('getStoreValue', 'k_device')) || DEVICE_NAMES[1]
+    const device = DEVICES[deviceName]
     const scale = (await ipcRenderer.invoke('getStoreValue', 'k_device_scale')) || SCALES[0]
     deviceInfo.device = device
-    deviceInfo.width = SIZE[device].width
-    deviceInfo.height = SIZE[device].height
     deviceInfo.scale = scale
-    deviceInfo.iphonex = device === 'iPhone X'
+    deviceInfo.iphonex = device.name === 'iPhone X'
   })
 
   onUnmounted(() => {

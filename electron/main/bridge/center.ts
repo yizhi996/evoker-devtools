@@ -19,6 +19,7 @@ const warn = msg => console.warn(`[Evoker devtools] ${msg}`)
 
 interface BridgeInterface {
   isService: boolean
+  isDevtools: boolean
   pageId: number
   invokeCallbackSuccess: (args: InvokeArgs, result?: Record<string, any>) => void
   invokeCallbackFail: (args: InvokeArgs, error: string) => void
@@ -52,16 +53,16 @@ export function createWebSocketServer(options: CreateWebSockerServerOptions) {
     console.log()
     log('client connected')
 
-    isFunction(options.onConnect) && options.onConnect(bridge)
+    isFunction(options.onConnect) && options.onConnect(clientToBridge(bridge))
 
     bridge.on('close', () => {
       log('client close connection')
-      isFunction(options.onDisconnect) && options.onDisconnect(bridge)
+      isFunction(options.onDisconnect) && options.onDisconnect(clientToBridge(bridge))
     })
 
     bridge.on('error', error => {
       warn(`client connection error: ${error}`)
-      isFunction(options.onDisconnect) && options.onDisconnect(bridge)
+      isFunction(options.onDisconnect) && options.onDisconnect(clientToBridge(bridge))
     })
 
     bridge.on('message', data => {
@@ -69,7 +70,7 @@ export function createWebSocketServer(options: CreateWebSockerServerOptions) {
       if (message === HeartBeatMessage.PING) {
         bridge.send(HeartBeatMessage.PONG)
       } else {
-        options.onRecv && options.onRecv(bridge, message)
+        options.onRecv && options.onRecv(clientToBridge(bridge), message)
       }
     })
   })
@@ -84,35 +85,44 @@ export function createWebSocketServer(options: CreateWebSockerServerOptions) {
     }
   })
 
+  const invokeCallback = (
+    bridge: Bridge,
+    event: string,
+    callbackId: number,
+    errMsg: string,
+    data?: Record<string, any>
+  ) => {
+    const result = JSON.stringify({
+      id: callbackId,
+      event,
+      errMsg,
+      data: data || {}
+    })
+    bridge.readyState == bridge.OPEN &&
+      bridge.send(JSON.stringify({ exec: 'INVOKE_CALLBACK', result }))
+  }
+
+  const clientToBridge = (client: Bridge) => {
+    if (client.invokeCallbackSuccess) {
+      return client
+    }
+    client.invokeCallbackSuccess = (args: InvokeArgs, result?: Record<string, any>) => {
+      invokeCallback(client, args.event, args.callbackId, '', result)
+    }
+    client.invokeCallbackFail = (args: InvokeArgs, errMsg: string) => {
+      invokeCallback(client, args.event, args.callbackId, errMsg)
+    }
+    client.subscribeHandler = (args: PublishArgs) => {
+      client.readyState == client.OPEN &&
+        client.send(JSON.stringify({ exec: 'SUBSCRIBE_HANDLER', args }))
+    }
+    return client
+  }
+
   return {
     wss: webSocketServer,
     clients: () => {
-      return (Array.from(webSocketServer.clients) as Bridge[]).map(b => {
-        const invokeCallback = (
-          event: string,
-          callbackId: number,
-          errMsg: string,
-          data?: Record<string, any>
-        ) => {
-          const result = JSON.stringify({
-            id: callbackId,
-            event,
-            errMsg,
-            data: data || {}
-          })
-          b.readyState == b.OPEN && b.send(JSON.stringify({ exec: 'INVOKE_CALLBACK', result }))
-        }
-        b.invokeCallbackSuccess = (args: InvokeArgs, result?: Record<string, any>) => {
-          invokeCallback(args.event, args.callbackId, '', result)
-        }
-        b.invokeCallbackFail = (args: InvokeArgs, errMsg: string) => {
-          invokeCallback(args.event, args.callbackId, errMsg)
-        }
-        b.subscribeHandler = (args: PublishArgs) => {
-          b.readyState == b.OPEN && b.send(JSON.stringify({ exec: 'SUBSCRIBE_HANDLER', args }))
-        }
-        return b
-      })
+      return (Array.from(webSocketServer.clients) as Bridge[]).map(clientToBridge)
     }
   }
 }

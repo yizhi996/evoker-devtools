@@ -13,7 +13,7 @@
           ></webview>
           <template v-if="pages.length">
             <StatusBar
-              :safe-area-inset="safeAreaInsets.top"
+              :safe-area-inset="deviceInfo.device.safeAreaInsets.top"
               :have-notch="deviceInfo.iphonex"
               :style="{
                 'background-color': pages[pages.length - 1].style.navigationBarBackgroundColor
@@ -36,9 +36,9 @@
                 v-for="(page, i) of pages"
                 :key="i"
                 :style="{
-                  width: deviceInfo.width + 'px',
-                  height: pageSizeInfo.webViewHeight + 'px',
-                  top: pageSizeInfo.navigationBarHeight + 'px'
+                  width: page.width + 'px',
+                  height: page.height + 'px',
+                  top: page.top + 'px'
                 }"
                 :service="service"
                 :path="page.path"
@@ -50,14 +50,15 @@
               v-show="service.config.tabBar && pages[pages.length - 1].isTabBar"
               :config="service.config"
               :current="0"
-              :safe-area-inset="safeAreaInsets.bottom"
+              :safe-area-inset="deviceInfo.device.safeAreaInsets.bottom"
             ></TabBar>
 
             <HomeIndicator v-if="deviceInfo.iphonex"></HomeIndicator>
           </template>
         </div>
       </div>
-      <webview ref="debuggerEl" class="w-2/3 h-full" src="about:blank"></webview>
+      <!-- <webview ref="debuggerEl" class="w-2/3 h-full" src="file:///Applications/%E5%B0%8F%E7%A8%8B%E5%BA%8F%E5%BC%80%E5%8F%91%E8%80%85%E5%B7%A5%E5%85%B7.app/Contents/Resources/app/extensions/minicode.mini-devtools-extension-3.1.3.asar/mini-ide-emulator-devtools-frontend/index.html?ws=localhost:33233&env=kaitian&_token=0c24c371-1f74-473a-b487-8a185f3e02b9&lang=en-US&theme=dark&project=blank&mockPanelUrl=https://render.alipay.com/p/w/mock-config-panel/index.html"></webview> -->
+      <webview ref="debuggerEl" class="w-2/3 h-full" src="devtools://devtools/bundled/devtools_app.html?ws=localhost:33233&remoteBase=https://chrome-devtools-frontend.appspot.com/serve_file/@62051e273394f7f36293c7cb8370e119d9dc8d29/&can_dock=&toolbarColor=rgba(223,223,223,1)&textColor=rgba(0,0,0,1)&experiments=true"></webview>
     </div>
   </div>
 </template>
@@ -83,44 +84,13 @@ const debuggerEl = ref<Electron.WebviewTag>()
 const service = useService(props.appId, serviceEl)
 
 const simulatorStyles = computed(() => {
-  return `width: ${deviceInfo.width}px; height: ${deviceInfo.height}px; border-radius: ${
-    deviceInfo.iphonex ? 30 : 0
-  }; transform: scale(${deviceInfo.scale / 100});transform-origin: 50% 0;margin-bottom: ${
-    window.innerHeight - 40 - deviceInfo.height - 44
-  }px;`
-})
-
-const safeAreaInsets = computed(() => {
-  return deviceInfo.iphonex
-    ? {
-        top: 44,
-        bottom: 34,
-        left: 0,
-        right: 0
-      }
-    : {
-        top: 0,
-        bottom: 0,
-        left: 0,
-        right: 0
-      }
-})
-
-const pageSizeInfo = computed(() => {
-  const config = service.config
-  const navigationBarHeight = safeAreaInsets.value.top + 44
-
-  let tabBarHeight = 0
-  const last = pages.value[pages.value.length - 1]
-  if (last.isTabBar) {
-    tabBarHeight =
-      config?.tabBar && config.tabBar.list.length ? 44 + safeAreaInsets.value.bottom : 0
-  }
-
-  const webViewHeight = deviceInfo.height - navigationBarHeight - tabBarHeight
   return {
-    navigationBarHeight,
-    webViewHeight
+    width: `${deviceInfo.device.width}px`,
+    height: `${deviceInfo.device.height}px`,
+    'border-radius': `${deviceInfo.iphonex ? 30 : 0}px`,
+    transform: `scale(${deviceInfo.scale / 100})`,
+    'transform-origin': '50% 0',
+    'margin-bottom': `${window.innerHeight - 40 - deviceInfo.device.height - 44}px`
   }
 })
 

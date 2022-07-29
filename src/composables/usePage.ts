@@ -31,6 +31,14 @@ export function usePage(service: AppService, webviewEl: Ref<WebView | undefined>
         tabText: '',
         path
       })
+
+      setTimeout(() => {
+        ipcRenderer.invoke('Chrome-DevTools-Protocol', {
+          debuggerId: webviewEl.value!.getWebContentsId(),
+          method: 'DOM.getDocument',
+          commandParams: {}
+        })
+      }, 2000)
     }
   }
 

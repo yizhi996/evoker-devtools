@@ -5,6 +5,7 @@ import { getAppPath, webviewLoadScript } from '../utils'
 import { useBridge, Bridge } from './useBridge'
 import { Page } from './usePage'
 import { extend } from '@vue/shared'
+import { deviceInfo } from './useDevice'
 
 type Required<T> = {
   [P in keyof T]-?: T[P]
@@ -63,6 +64,9 @@ export interface PageInfo {
   path: string
   style: Required<AppStyle>
   isTabBar: boolean
+  top: number
+  width: number
+  height: number
 }
 
 export let globalAppService: AppService | undefined
@@ -137,7 +141,7 @@ export function useService(appId: string, containerEl: Ref<Electron.WebviewTag |
     }
   }
 
-  const getPageInfo = (page: AppPageInfo) => {
+  const getPageInfo = (page: AppPageInfo): PageInfo => {
     const { tabBar } = config.value!
     let isTabBar = false
     if (tabBar && tabBar.list) {
@@ -145,16 +149,26 @@ export function useService(appId: string, containerEl: Ref<Electron.WebviewTag |
       isTabBar = i > -1
     }
 
-    let style = getWindowInfo()
+    let tabBarHeight = 0
+    if (isTabBar) {
+      tabBarHeight = tabBar!.list.length ? 44 + deviceInfo.device.safeAreaInsets.bottom : 0
+    }
 
+    const navigationBarHeight = deviceInfo.device.safeAreaInsets.top + 44
+
+    let style = getWindowInfo()
     if (page.style) {
       extend(style, page.style)
     }
+
     return {
       path: page.path,
       style,
-      isTabBar
-    } as PageInfo
+      isTabBar,
+      top: navigationBarHeight,
+      width: deviceInfo.device.width,
+      height: deviceInfo.device.height - navigationBarHeight - tabBarHeight
+    }
   }
 
   const getFirstPage = () => {

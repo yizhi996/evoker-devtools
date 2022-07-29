@@ -1,7 +1,7 @@
 <template>
   <div class="bg-white w-full flex items-center border-b px-3 h-10">
     <el-button text @click="showDeviceMenu"
-      >{{ deviceInfo.device }} {{ deviceInfo.scale }}%<el-icon class="el-icon--right"
+      >{{ deviceInfo.device.name }} {{ deviceInfo.scale }}%<el-icon class="el-icon--right"
         ><i-ep-caret-bottom /></el-icon
     ></el-button>
   </div>

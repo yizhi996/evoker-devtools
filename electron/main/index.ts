@@ -109,12 +109,21 @@ ipcMain.handle('open-win', (event, arg) => {
   }
 })
 
+let serviceWebContentesId = 0
+let devtoolsWebContentesId = 0
+export { serviceWebContentesId, devtoolsWebContentesId }
+
 ipcMain.on('open-devtools', (event, targetId, devtoolsId) => {
-  const target = webContents.fromId(targetId)
+  const service = webContents.fromId(targetId)
   const devtools = webContents.fromId(devtoolsId)
-  target.setDevToolsWebContents(devtools)
-  target.openDevTools()
-  devtools.executeJavaScript('window.location.reload()')
+  console.log(targetId, devtoolsId)
+  serviceWebContentesId = targetId
+  devtoolsWebContentesId = devtoolsId
+
+  service.debugger.addListener('message', (_, method, params) => {
+    const bridge = bridgeCenter.clients().find(b => b.isDevtools)
+    bridge && bridge.send(JSON.stringify({ method, params }))
+  })
 })
 
 ipcMain.handle('get-app-path', event => {

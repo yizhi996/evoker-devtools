@@ -5,6 +5,8 @@ import { loadAppPath } from './utils'
 import './bridge'
 
 import './tailwind.css'
+import { ipcRenderer } from 'electron'
+import { globalAppService } from './composables/useService'
 
 loadAppPath().then(() => {
   createApp(App)
@@ -13,3 +15,5 @@ loadAppPath().then(() => {
       postMessage({ payload: 'removeLoading' }, '*')
     })
 })
+
+ipcRenderer.on('reload', () => {})
