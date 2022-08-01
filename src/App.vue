@@ -2,7 +2,7 @@
   <div class="w-screen h-screen overflow-hidden">
     <ToolsBar></ToolsBar>
     <SplitView>
-      <Simulator app-id="com.evokerdev.example"></Simulator>
+      <Simulator></Simulator>
     </SplitView>
   </div>
 </template>

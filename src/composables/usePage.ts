@@ -1,12 +1,20 @@
 import { Ref, watch } from 'vue'
 import { Bridge, useBridge } from './useBridge'
-import { AppService } from './useService'
+import { globalAppService, AppStyle } from './useService'
 import { emittedOnce, webviewLoadScript, webviewLoadStyle } from '../utils'
 import { ipcRenderer } from 'electron'
 
-export interface Page {
+export interface PageInfo {
   pageId: number
   path: string
+  style: Required<AppStyle>
+  isTabBar: boolean
+  top: number
+  width: number
+  height: number
+}
+
+export interface Page extends PageInfo {
   webView: Ref<WebView | undefined>
   bridge: Bridge
   mount: (path: string) => void
@@ -14,15 +22,18 @@ export interface Page {
 
 export interface WebView extends Electron.WebviewTag {}
 
-export function usePage(service: AppService, webviewEl: Ref<WebView | undefined>): Page {
-  const bridge = useBridge(service, webviewEl)
+export function usePage(pageInfo: PageInfo, webviewEl: Ref<WebView | undefined>): Page {
+  const service = globalAppService!
+
+  let isMounted = false
 
   const page: Page = {
-    pageId: service.genPageId(),
-    path: '',
+    ...pageInfo,
     webView: webviewEl,
-    bridge,
+    bridge: useBridge(webviewEl),
     mount: (path: string) => {
+      isMounted = true
+
       page.path = path
       service.bridge.subscribeHandler('PAGE_BEGIN_MOUNT', {
         pageId: page.pageId,
@@ -31,14 +42,6 @@ export function usePage(service: AppService, webviewEl: Ref<WebView | undefined>
         tabText: '',
         path
       })
-
-      setTimeout(() => {
-        ipcRenderer.invoke('Chrome-DevTools-Protocol', {
-          debuggerId: webviewEl.value!.getWebContentsId(),
-          method: 'DOM.getDocument',
-          commandParams: {}
-        })
-      }, 2000)
     }
   }
 
@@ -48,6 +51,8 @@ export function usePage(service: AppService, webviewEl: Ref<WebView | undefined>
       const webview = webviewEl.value
       if (webview) {
         await emittedOnce(webview, 'dom-ready')
+
+        ipcRenderer.send('set-webview-contents-id', webview.getWebContentsId())
 
         webview.executeJavaScript(
           `window.webViewId = ${page.pageId}
@@ -61,6 +66,7 @@ export function usePage(service: AppService, webviewEl: Ref<WebView | undefined>
         await webviewLoadScript(webview, './devtools.global.js')
         await webviewLoadScript(webview, './webview.global.js')
         await webviewLoadStyle(webview, `../App/${service.config.appId}/dist/style.css`)
+
         stop()
       }
     }

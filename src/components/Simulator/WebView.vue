@@ -1,24 +1,32 @@
 <template>
-  <webview ref="webviewEl" class="w-full h-full bg-white" :src="src"></webview>
+  <webview
+    ref="webviewEl"
+    class="w-full h-full bg-white"
+    :src="src"
+    :style="{
+      width: page.width + 'px',
+      height: page.height + 'px',
+      top: page.top + 'px'
+    }"
+  ></webview>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { getAppPath } from '../../utils'
+import { getUserDataPath } from '../../utils'
 import path from 'path'
-import { usePage } from '../../composables/usePage'
-import { AppService } from '../../composables/useService'
+import { usePage, PageInfo } from '../../composables/usePage'
 
-const props = defineProps<{ service: AppService; path: string }>()
+const props = defineProps<{ page: PageInfo }>()
 
-const src = 'file://' + path.join(getAppPath('userData'), 'SDK/index.html')
+const src = 'file://' + path.join(getUserDataPath(), 'SDK/index.html')
 
 const webviewEl = ref<Electron.WebviewTag>()
 
-const { mount } = usePage(props.service, webviewEl)
+const { mount } = usePage(props.page, webviewEl)
 
 watch(
-  () => props.path,
+  () => props.page.path,
   newValue => {
     if (newValue !== 'preload') {
       mount(newValue)

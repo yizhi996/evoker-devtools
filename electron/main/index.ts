@@ -4,7 +4,7 @@ import { join } from 'path'
 import './store'
 import './menu'
 import { createWebSocketClient } from './server/dev'
-import { createBridgeCenter } from './bridge'
+import { createBridgeCenter, Protocol } from './center'
 
 // Disable GPU Acceleration for Windows 7
 if (release().startsWith('6.1')) app.disableHardwareAcceleration()
@@ -111,17 +111,28 @@ ipcMain.handle('open-win', (event, arg) => {
 
 let serviceWebContentesId = 0
 let devtoolsWebContentesId = 0
-export { serviceWebContentesId, devtoolsWebContentesId }
+let currentPageWebContentesId = 0
+export { serviceWebContentesId, devtoolsWebContentesId, currentPageWebContentesId }
 
 ipcMain.on('open-devtools', (event, targetId, devtoolsId) => {
   const service = webContents.fromId(targetId)
   const devtools = webContents.fromId(devtoolsId)
-  console.log(targetId, devtoolsId)
+
   serviceWebContentesId = targetId
   devtoolsWebContentesId = devtoolsId
 
   service.debugger.addListener('message', (_, method, params) => {
-    const bridge = bridgeCenter.clients().find(b => b.isDevtools)
+    const bridge = bridgeCenter.clients.get(Protocol.APPSERVICEDEVTOOLS).get('')
+    bridge && bridge.send(JSON.stringify({ method, params }))
+  })
+})
+
+ipcMain.on('set-webview-contents-id', (_, targetId) => {
+  const target = webContents.fromId(targetId)
+  currentPageWebContentesId = targetId
+
+  target.debugger.addListener('message', (_, method, params) => {
+    const bridge = bridgeCenter.clients.get(Protocol.APPSERVICEDEVTOOLS).get('')
     bridge && bridge.send(JSON.stringify({ method, params }))
   })
 })
@@ -150,4 +161,11 @@ ipcMain.handle('get-app-path', event => {
     result[name] = app.getPath(name)
   }
   return result
+})
+
+ipcMain.handle('init_env', _ => {
+  return {
+    USER_DATA_PATH: app.getPath('userData'),
+    APP_ID: 'com.evokerdev.example'
+  }
 })

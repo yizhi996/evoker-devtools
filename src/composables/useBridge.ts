@@ -29,28 +29,7 @@ export interface Bridge {
   subscribeHandler: (method: string, data: string | Record<string, any>, webViewId?: number) => void
 }
 
-export function useBridge(
-  service: AppService,
-  containerEl: Ref<Electron.WebviewTag | undefined>
-): Bridge {
-  const onInvoke = (args: InvokeArgs) => {
-    console.log(args)
-  }
-
-  const onPublish = (args: PublishArgs) => {
-    const { event, params, webViewId } = args
-    if (
-      event === 'vdSync' ||
-      event === 'invokeAppServiceMethod' ||
-      event === 'callbackWebViewMethod'
-    ) {
-      service.bridge.subscribeHandler(event, params, webViewId)
-    } else if (event === 'callbackAppServiceMethod' || event === 'invokeWebViewMethod') {
-      const webPage = service.findPage(webViewId)
-      webPage && webPage.bridge.subscribeHandler(event, params, webViewId)
-    }
-  }
-
+export function useBridge(containerEl: Ref<Electron.WebviewTag | undefined>): Bridge {
   const invokeCallback = (
     event: string,
     callbackId: number,

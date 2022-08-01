@@ -1,15 +1,11 @@
 import { Ref, ref } from 'vue'
 import path from 'path'
 import fs from 'fs'
-import { getAppPath, webviewLoadScript } from '../utils'
+import { getUserDataPath, webviewLoadScript } from '../utils'
 import { useBridge, Bridge } from './useBridge'
-import { Page } from './usePage'
 import { extend } from '@vue/shared'
 import { deviceInfo } from './useDevice'
-
-type Required<T> = {
-  [P in keyof T]-?: T[P]
-}
+import { PageInfo } from './usePage'
 
 export interface AppConfig {
   appId: string
@@ -18,13 +14,13 @@ export interface AppConfig {
   tabBar?: AppTabBar
 }
 
-interface AppPageInfo {
+export interface AppPageInfo {
   path: string
   component: string
   style?: AppStyle
 }
 
-interface AppStyle {
+export interface AppStyle {
   backgroundColor?: string
   navigationBarBackgroundColor?: string
   navigationBarTextStyle?: 'black' | 'white'
@@ -50,8 +46,10 @@ export interface AppTabBarItem {
 export interface AppService extends Electron.WebviewTag {
   config: AppConfig
   bridge: Bridge
-  pages: Ref<Page[]>
-  findPage: (pageId: number) => Page | undefined
+  pages: Ref<PageInfo[]>
+  evalScript: (script: string) => Promise<any>
+  loadAppService: () => void
+  findPage: (pageId: number) => PageInfo | undefined
   genPageId: () => number
   onLoaded: (callback: (page: PageInfo) => void) => void
   onPush: (callback: (page: PageInfo) => void) => void
@@ -60,24 +58,15 @@ export interface AppService extends Electron.WebviewTag {
   back: (delta: number) => void
 }
 
-export interface PageInfo {
-  path: string
-  style: Required<AppStyle>
-  isTabBar: boolean
-  top: number
-  width: number
-  height: number
-}
-
 export let globalAppService: AppService | undefined
 
-export function useService(appId: string, containerEl: Ref<Electron.WebviewTag | undefined>) {
+export function useService(containerEl: Ref<Electron.WebviewTag | undefined>) {
   if (globalAppService) {
     return globalAppService
   }
   const config = ref<AppConfig>()
 
-  const pages = ref<Page[]>([])
+  const pages = ref<PageInfo[]>([])
 
   let _onLoadedCallback: (page: PageInfo) => void
 
@@ -91,9 +80,9 @@ export function useService(appId: string, containerEl: Ref<Electron.WebviewTag |
   }
 
   const load = () => {
-    const root = getAppPath('userData')
+    const root = getUserDataPath()
 
-    const appConfigFilePath = path.join(root, `App/${appId}/dist/app.json`)
+    const appConfigFilePath = path.join(root, `App/${window.env.APP_ID}/dist/app.json`)
     if (fs.existsSync(appConfigFilePath)) {
       const appConfig: AppConfig = JSON.parse(
         fs.readFileSync(appConfigFilePath, { encoding: 'utf-8' })
@@ -111,7 +100,7 @@ export function useService(appId: string, containerEl: Ref<Electron.WebviewTag |
     if (!container) {
       return
     }
-    const root = getAppPath('userData')
+    const root = getUserDataPath()
 
     container.loadURL('file://' + root + '/SDK/appService.html')
 
@@ -123,10 +112,13 @@ export function useService(appId: string, containerEl: Ref<Electron.WebviewTag |
     await webviewLoadScript(container, './vue.runtime.global.js')
     await webviewLoadScript(container, './evoker.global.js')
 
-    await webviewLoadScript(container, `../App/${appId}/dist/app-service.js`)
+    await webviewLoadScript(container, `../App/${window.env.APP_ID}/dist/app-service.js`)
 
     setTimeout(() => {
-      _onLoadedCallback && _onLoadedCallback(getFirstPage()!)
+      const pageInfo = getFirstPage()!
+      pages.value.push(pageInfo)
+      onLoad(pageInfo)
+      onShow(pageInfo)
     }, 200)
   }
 
@@ -162,6 +154,7 @@ export function useService(appId: string, containerEl: Ref<Electron.WebviewTag |
     }
 
     return {
+      pageId: ++pageId,
       path: page.path,
       style,
       isTabBar,
@@ -194,6 +187,7 @@ export function useService(appId: string, containerEl: Ref<Electron.WebviewTag |
   const appService: AppService = {
     config: config.value!,
     pages,
+    bridge: useBridge(containerEl),
     loadAppService,
     evalScript,
     onLoaded: (callback: (page: PageInfo) => void) => {
@@ -212,19 +206,31 @@ export function useService(appId: string, containerEl: Ref<Electron.WebviewTag |
       return ++pageId
     },
     push: (url: string) => {
-      const { pages } = config.value!
-      const page = pages.find(p => p.path === url)
+      const page = config.value!.pages.find(p => p.path === url)
       if (page) {
-        _onPushCallback && _onPushCallback(getPageInfo(page))
-      } else {
+        const pageInfo = getPageInfo(page)
+        pages.value.push(pageInfo)
+        _onPushCallback && _onPushCallback(pageInfo)
       }
     },
     back: (delta: number = 1) => {
+      pages.value.pop()
+      const last = pages.value[pages.value.length - 1]
+      if (last) {
+        last
+      }
       _onBackCallback && _onBackCallback(delta)
     }
   }
 
-  appService.bridge = useBridge(appService, containerEl)
+  const onLoad = (page: PageInfo) => {
+    appService.bridge.subscribeHandler('APP_ON_LAUNCH', { path: page.path, referrerInfo: {} })
+    _onLoadedCallback && _onLoadedCallback(page)
+  }
+
+  const onShow = (page: PageInfo) => {
+    appService.bridge.subscribeHandler('APP_ON_SHOW', { path: page.path, referrerInfo: {} })
+  }
 
   globalAppService = appService
 

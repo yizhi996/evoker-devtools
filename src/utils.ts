@@ -1,15 +1,4 @@
-import { ipcRenderer } from 'electron'
-
-const appPath = new Map<string, string>()
-
-export async function loadAppPath() {
-  const result: Record<string, string> = await ipcRenderer.invoke('get-app-path')
-  for (const [k, v] of Object.entries(result)) {
-    appPath.set(k, v)
-  }
-}
-
-export const getAppPath = (name: string) => appPath.get(name)!
+export const getUserDataPath = () => window.env.USER_DATA_PATH
 
 export function webviewLoadScript(webview: Electron.WebviewTag, filePath: string) {
   const script = `(function() {

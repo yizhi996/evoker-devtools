@@ -1,6 +1,6 @@
 <template>
   <div class="bg-white w-full h-full">
-    <div v-if="service.config" class="inline-flex w-full" style="height: calc(100% - 40px)">
+    <div v-if="config" class="inline-flex w-full" style="height: calc(100% - 40px)">
       <div
         class="w-1/3 overflow-y-auto flex items-center justify-center bg-gray-300"
         style="min-width: 400px"
@@ -16,7 +16,7 @@
               :safe-area-inset="deviceInfo.device.safeAreaInsets.top"
               :have-notch="deviceInfo.iphonex"
               :style="{
-                'background-color': pages[pages.length - 1].style.navigationBarBackgroundColor
+                'background-color': lastPage.style.navigationBarBackgroundColor
               }"
             ></StatusBar>
 
@@ -25,30 +25,25 @@
               class="absolute"
               :key="i"
               :page="page"
-              :config="service.config"
+              :config="config"
               :show-back="pages.length > 1"
-              @back="onBack"
+              @back="back"
             ></NavigationBar>
 
             <TransitionGroup name="push">
               <WebView
                 class="absolute"
-                v-for="(page, i) of pages"
-                :key="i"
-                :style="{
-                  width: page.width + 'px',
-                  height: page.height + 'px',
-                  top: page.top + 'px'
-                }"
-                :service="service"
-                :path="page.path"
+                v-for="page of pages"
+                :key="page.pageId"
+                ref="pageRefs"
+                :page="page"
               ></WebView>
             </TransitionGroup>
 
             <TabBar
               class="absolute left-0 bottom-0"
-              v-show="service.config.tabBar && pages[pages.length - 1].isTabBar"
-              :config="service.config"
+              v-show="config.tabBar && lastPage.isTabBar"
+              :config="config"
               :current="0"
               :safe-area-inset="deviceInfo.device.safeAreaInsets.bottom"
             ></TabBar>
@@ -57,8 +52,11 @@
           </template>
         </div>
       </div>
-      <!-- <webview ref="debuggerEl" class="w-2/3 h-full" src="file:///Applications/%E5%B0%8F%E7%A8%8B%E5%BA%8F%E5%BC%80%E5%8F%91%E8%80%85%E5%B7%A5%E5%85%B7.app/Contents/Resources/app/extensions/minicode.mini-devtools-extension-3.1.3.asar/mini-ide-emulator-devtools-frontend/index.html?ws=localhost:33233&env=kaitian&_token=0c24c371-1f74-473a-b487-8a185f3e02b9&lang=en-US&theme=dark&project=blank&mockPanelUrl=https://render.alipay.com/p/w/mock-config-panel/index.html"></webview> -->
-      <webview ref="debuggerEl" class="w-2/3 h-full" src="devtools://devtools/bundled/devtools_app.html?ws=localhost:33233&remoteBase=https://chrome-devtools-frontend.appspot.com/serve_file/@62051e273394f7f36293c7cb8370e119d9dc8d29/&can_dock=&toolbarColor=rgba(223,223,223,1)&textColor=rgba(0,0,0,1)&experiments=true"></webview>
+      <webview
+        ref="debuggerEl"
+        class="w-2/3 h-full"
+        src="file:///Users/dskcpp/Downloads/frontend/devtools-frontend/out/Default/gen/front_end/devtools_app.html?ws=localhost:33233"
+      ></webview>
     </div>
   </div>
 </template>
@@ -66,7 +64,7 @@
 <script setup lang="ts">
 import { ipcRenderer } from 'electron'
 import { computed, nextTick, onMounted, ref } from 'vue'
-import { useService, PageInfo } from '../../composables/useService'
+import { useService } from '../../composables/useService'
 import NavigationBar from './NavigationBar.vue'
 import StatusBar from './StatusBar.vue'
 import TabBar from './TabBar.vue'
@@ -75,13 +73,13 @@ import HomeIndicator from './HomeIndicator.vue'
 import { emittedOnce } from '../../utils'
 import { deviceInfo } from '../../composables/useDevice'
 
-const props = defineProps<{ appId: string }>()
-
 const serviceEl = ref<Electron.WebviewTag>()
 
 const debuggerEl = ref<Electron.WebviewTag>()
 
-const service = useService(props.appId, serviceEl)
+const pageRefs = ref([])
+
+const { config, pages, loadAppService, back } = useService(serviceEl)
 
 const simulatorStyles = computed(() => {
   return {
@@ -101,30 +99,16 @@ onMounted(async () => {
   const devtoolsReady = emittedOnce(debuggerEl.value!, 'dom-ready')
 
   Promise.all([browserReady, devtoolsReady]).then(() => {
-    service.loadAppService()
+    loadAppService()
     const targetId = serviceEl.value!.getWebContentsId()
     const devtoolsId = debuggerEl.value!.getWebContentsId()
     ipcRenderer.send('open-devtools', targetId, devtoolsId)
   })
 })
 
-const pages = ref<PageInfo[]>([])
-
-service.onLoaded(page => {
-  pages.value.push(page)
+const lastPage = computed(() => {
+  return pages.value[pages.value.length - 1]
 })
-
-service.onPush(page => {
-  pages.value.push(page)
-})
-
-service.onBack(delta => {
-  pages.value.pop()
-})
-
-const onBack = () => {
-  pages.value.pop()
-}
 </script>
 
 <style scpoed>

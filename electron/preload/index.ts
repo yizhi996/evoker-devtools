@@ -1,3 +1,5 @@
+import { ipcRenderer } from 'electron'
+
 function domReady(condition: DocumentReadyState[] = ['complete', 'interactive']) {
   return new Promise(resolve => {
     if (condition.includes(document.readyState)) {
@@ -83,7 +85,12 @@ function useLoading() {
 // ----------------------------------------------------------------------
 
 const { appendLoading, removeLoading } = useLoading()
-domReady().then(appendLoading)
+domReady().then(() => {
+  ipcRenderer.invoke('init_env').then(env => {
+    window.env = env
+  })
+  appendLoading()
+})
 
 window.onmessage = ev => {
   ev.data.payload === 'removeLoading' && removeLoading()

@@ -25,8 +25,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { AppConfig } from '../../composables/useService'
-import { getAppPath } from '../../utils'
+import { getUserDataPath } from '../../utils'
 import path from 'path'
+import fs from 'fs'
 
 const props = withDefaults(
   defineProps<{
@@ -59,7 +60,8 @@ const iconPath = (index: number, iconPath?: string, selectedIconPath?: string) =
     return
   }
   const src = index === props.current ? selectedIconPath : iconPath
-  const res = 'file://' + path.join(getAppPath('userData'), `App/${props.config.appId}/dist/${src}`)
+  const filePath = path.join(getUserDataPath(), `App/${window.env.APP_ID}/dist/${src}`)
+  const res = `data:image/png;base64, ` + fs.readFileSync(filePath, { encoding: 'base64' })
   return res
 }
 

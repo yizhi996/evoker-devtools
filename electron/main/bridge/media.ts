@@ -1,6 +1,6 @@
 import { app } from 'electron'
 import { join } from 'path'
-import { AppService } from '../../app'
+import { AppService } from '../app'
 import { Bridge, InvokeArgs } from '../center'
 import fs from 'fs'
 
