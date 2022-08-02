@@ -17,13 +17,19 @@ import { getUserDataPath } from '../../utils'
 import path from 'path'
 import { usePage, PageInfo } from '../../composables/usePage'
 
+const emit = defineEmits(['ready'])
+
 const props = defineProps<{ page: PageInfo }>()
 
 const src = 'file://' + path.join(getUserDataPath(), 'SDK/index.html')
 
 const webviewEl = ref<Electron.WebviewTag>()
 
-const { mount } = usePage(props.page, webviewEl)
+const { mount, onSetup } = usePage(props.page, webviewEl)
+
+onSetup(webContentsId => {
+  emit('ready', webContentsId)
+})
 
 watch(
   () => props.page.path,

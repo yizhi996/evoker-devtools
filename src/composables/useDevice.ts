@@ -53,6 +53,15 @@ const deviceInfo = reactive({
 
 export { deviceInfo }
 
+export async function initialize() {
+  const deviceName = (await ipcRenderer.invoke('getStoreValue', 'k_device')) || DEVICE_NAMES[1]
+  const device = DEVICES[deviceName]
+  const scale = (await ipcRenderer.invoke('getStoreValue', 'k_device_scale')) || SCALES[0]
+  deviceInfo.device = device
+  deviceInfo.scale = scale
+  deviceInfo.iphonex = device.name === 'iPhone X'
+}
+
 export function useDevice() {
   const Event = 'device-menu-command'
 
@@ -71,15 +80,6 @@ export function useDevice() {
   }
 
   ipcRenderer.on(Event, modify)
-
-  onMounted(async () => {
-    const deviceName = (await ipcRenderer.invoke('getStoreValue', 'k_device')) || DEVICE_NAMES[1]
-    const device = DEVICES[deviceName]
-    const scale = (await ipcRenderer.invoke('getStoreValue', 'k_device_scale')) || SCALES[0]
-    deviceInfo.device = device
-    deviceInfo.scale = scale
-    deviceInfo.iphonex = device.name === 'iPhone X'
-  })
 
   onUnmounted(() => {
     ipcRenderer.off(Event, modify)

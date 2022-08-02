@@ -1,14 +1,11 @@
 import { BrowserWindow } from 'electron'
-import { join } from 'path'
-import { AppService } from '../../app'
 import { Bridge, InvokeArgs } from '../center'
-import fs from 'fs'
 
 interface NavigateToParams {
   url: string
 }
 
-export function navigateTo(service: AppService, bridge: Bridge, args: InvokeArgs) {
+export function navigateTo(appId: string, bridge: Bridge, args: InvokeArgs) {
   const params: NavigateToParams = JSON.parse(args.params)
 
   const win = BrowserWindow.getAllWindows()[0]
@@ -21,7 +18,7 @@ interface NavigateBackParams {
   delta?: number
 }
 
-export function navigateBack(service: AppService, bridge: Bridge, args: InvokeArgs) {
+export function navigateBack(appId: string, bridge: Bridge, args: InvokeArgs) {
   const params: NavigateBackParams = JSON.parse(args.params)
 
   const win = BrowserWindow.getAllWindows()[0]

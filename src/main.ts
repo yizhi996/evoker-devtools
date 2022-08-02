@@ -6,6 +6,17 @@ import './tailwind.css'
 
 const app = createApp(App)
 
-app.mount('#app').$nextTick(() => {
-  postMessage({ payload: 'removeLoading' }, '*')
+import { initialize } from './composables/useDevice'
+import { ipcRenderer } from 'electron'
+import { useEvents } from './composables/useEvents'
+
+ipcRenderer.on('init_env', (_, env) => {
+  window.env = env
+  useEvents().dispatch('open-project')
+})
+
+initialize().then(() => {
+  app.mount('#app').$nextTick(() => {
+    postMessage({ payload: 'removeLoading' }, '*')
+  })
 })

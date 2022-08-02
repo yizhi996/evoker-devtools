@@ -1,10 +1,11 @@
-import { app, BrowserWindow, shell, ipcMain, webContents } from 'electron'
+import { app, BrowserWindow, shell, ipcMain, webContents, dialog } from 'electron'
 import { release } from 'os'
 import { join } from 'path'
 import './store'
 import './menu'
 import { createWebSocketClient } from './server/dev'
-import { createBridgeCenter, Protocol } from './center'
+import './project'
+import './devtools'
 
 // Disable GPU Acceleration for Windows 7
 if (release().startsWith('6.1')) app.disableHardwareAcceleration()
@@ -32,8 +33,6 @@ const preload = join(__dirname, '../preload/index.js')
 // 🚧 Use ['ENV_NAME'] avoid vite:define plugin
 const url = `http://${process.env['VITE_DEV_SERVER_HOST']}:${process.env['VITE_DEV_SERVER_PORT']}`
 const indexHtml = join(ROOT_PATH.dist, 'index.html')
-
-const bridgeCenter = createBridgeCenter({ appId: 'com.evokerdev.example' })
 
 const devClient = createWebSocketClient()
 
@@ -109,34 +108,6 @@ ipcMain.handle('open-win', (event, arg) => {
   }
 })
 
-let serviceWebContentesId = 0
-let devtoolsWebContentesId = 0
-let currentPageWebContentesId = 0
-export { serviceWebContentesId, devtoolsWebContentesId, currentPageWebContentesId }
-
-ipcMain.on('open-devtools', (event, targetId, devtoolsId) => {
-  const service = webContents.fromId(targetId)
-  const devtools = webContents.fromId(devtoolsId)
-
-  serviceWebContentesId = targetId
-  devtoolsWebContentesId = devtoolsId
-
-  service.debugger.addListener('message', (_, method, params) => {
-    const bridge = bridgeCenter.clients.get(Protocol.APPSERVICEDEVTOOLS).get('')
-    bridge && bridge.send(JSON.stringify({ method, params }))
-  })
-})
-
-ipcMain.on('set-webview-contents-id', (_, targetId) => {
-  const target = webContents.fromId(targetId)
-  currentPageWebContentesId = targetId
-
-  target.debugger.addListener('message', (_, method, params) => {
-    const bridge = bridgeCenter.clients.get(Protocol.APPSERVICEDEVTOOLS).get('')
-    bridge && bridge.send(JSON.stringify({ method, params }))
-  })
-})
-
 ipcMain.handle('get-app-path', event => {
   const names: any[] = [
     'home',
@@ -161,11 +132,4 @@ ipcMain.handle('get-app-path', event => {
     result[name] = app.getPath(name)
   }
   return result
-})
-
-ipcMain.handle('init_env', _ => {
-  return {
-    USER_DATA_PATH: app.getPath('userData'),
-    APP_ID: 'com.evokerdev.example'
-  }
 })

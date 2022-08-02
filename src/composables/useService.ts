@@ -148,11 +148,11 @@ export function useService(containerEl: Ref<Electron.WebviewTag | undefined>) {
 
     const navigationBarHeight = deviceInfo.device.safeAreaInsets.top + 44
 
-    let style = getWindowInfo()
+    const style = getWindowInfo()
     if (page.style) {
       extend(style, page.style)
     }
-
+    
     return {
       pageId: ++pageId,
       path: page.path,
@@ -214,11 +214,11 @@ export function useService(containerEl: Ref<Electron.WebviewTag | undefined>) {
       }
     },
     back: (delta: number = 1) => {
-      pages.value.pop()
+      const pop = pages.value.pop()
+      pop?.instance?.publishOnUnload()
+
       const last = pages.value[pages.value.length - 1]
-      if (last) {
-        last
-      }
+      last?.instance?.publishOnShow()
       _onBackCallback && _onBackCallback(delta)
     }
   }

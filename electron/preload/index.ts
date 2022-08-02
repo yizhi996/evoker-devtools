@@ -86,9 +86,6 @@ function useLoading() {
 
 const { appendLoading, removeLoading } = useLoading()
 domReady().then(() => {
-  ipcRenderer.invoke('init_env').then(env => {
-    window.env = env
-  })
   appendLoading()
 })
 

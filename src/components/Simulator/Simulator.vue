@@ -37,6 +37,7 @@
                 :key="page.pageId"
                 ref="pageRefs"
                 :page="page"
+                @ready="onReady"
               ></WebView>
             </TransitionGroup>
 
@@ -52,18 +53,19 @@
           </template>
         </div>
       </div>
-      <webview
+      <!-- <webview
         ref="debuggerEl"
         class="w-2/3 h-full"
         src="file:///Users/dskcpp/Downloads/frontend/devtools-frontend/out/Default/gen/front_end/devtools_app.html?ws=localhost:33233"
-      ></webview>
+      ></webview> -->
+      <webview ref="debuggerEl" class="w-2/3 h-full" src="about:blank"></webview>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ipcRenderer } from 'electron'
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch, reactive } from 'vue'
 import { useService } from '../../composables/useService'
 import NavigationBar from './NavigationBar.vue'
 import StatusBar from './StatusBar.vue'
@@ -92,6 +94,27 @@ const simulatorStyles = computed(() => {
   }
 })
 
+const webContentsId = reactive({ service: 0, devtools: 0, firstWeb: 0 })
+
+let devtoolsOpened = false
+
+watch(
+  () => webContentsId,
+  newValue => {
+    if (!devtoolsOpened && newValue.service && newValue.devtools && newValue.firstWeb) {
+      devtoolsOpened = true
+      ipcRenderer.send(
+        'open-devtools',
+        window.env.APP_ID,
+        newValue.service,
+        newValue.devtools,
+        newValue.firstWeb
+      )
+    }
+  },
+  { deep: true }
+)
+
 onMounted(async () => {
   await nextTick()
 
@@ -100,11 +123,14 @@ onMounted(async () => {
 
   Promise.all([browserReady, devtoolsReady]).then(() => {
     loadAppService()
-    const targetId = serviceEl.value!.getWebContentsId()
-    const devtoolsId = debuggerEl.value!.getWebContentsId()
-    ipcRenderer.send('open-devtools', targetId, devtoolsId)
+    webContentsId.service = serviceEl.value!.getWebContentsId()
+    webContentsId.devtools = debuggerEl.value!.getWebContentsId()
   })
 })
+
+const onReady = (id: number) => {
+  webContentsId.firstWeb = id
+}
 
 const lastPage = computed(() => {
   return pages.value[pages.value.length - 1]
