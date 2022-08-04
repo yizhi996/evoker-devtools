@@ -82,7 +82,7 @@ export class MessageCenter {
     [Protocol.WEBVIEW, new Map()]
   ])
 
-  constructor(host: string, port: number, appId: string) {
+  constructor(appId: string, host: string, port: number) {
     this.host = host
     this.port = port
     this.appId = appId
@@ -108,6 +108,10 @@ export class MessageCenter {
         warn(`error: ${error}`)
       }
     })
+  }
+
+  close() {
+    this.wss.close()
   }
 
   private invokeCallback(

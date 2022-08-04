@@ -1,87 +1,81 @@
 <template>
-  <div class="bg-white w-full h-full">
-    <div v-if="config" class="inline-flex w-full" style="height: calc(100% - 40px)">
-      <div
-        class="w-1/3 overflow-y-auto flex items-center justify-center bg-gray-300"
-        style="min-width: 400px"
-      >
-        <div class="relative bg-white overflow-hidden" :style="simulatorStyles">
-          <webview
-            ref="serviceEl"
-            class="absolute top-0 left-0 w-full h-full"
-            src="about:blank"
-          ></webview>
-          <template v-if="pages.length">
-            <StatusBar
-              :safe-area-inset="deviceInfo.device.safeAreaInsets.top"
-              :have-notch="deviceInfo.iphonex"
-              :style="{
-                'background-color': lastPage.style.navigationBarBackgroundColor
-              }"
-            ></StatusBar>
+  <div class="select-none overflow-y-auto flex items-center justify-center bg-gray-300">
+    <div class="relative bg-white overflow-hidden" :style="simulatorStyles">
+      <Service class="absolute top-0 left-0 w-full h-full" @ready="onServiceReady"></Service>
+      <template v-if="globalAppService.pages.value.length">
+        <StatusBar
+          :safe-area-inset="deviceInfo.device.safeAreaInsets.top"
+          :have-notch="deviceInfo.iphonex"
+          :style="{
+            'background-color': lastPage.style.navigationBarBackgroundColor
+          }"
+        ></StatusBar>
 
-            <NavigationBar
-              v-for="(page, i) of pages"
-              class="absolute"
-              :key="i"
-              :page="page"
-              :config="config"
-              :show-back="pages.length > 1"
-              @back="back"
-            ></NavigationBar>
+        <NavigationBar
+          v-for="(page, i) of globalAppService.pages.value"
+          class="absolute"
+          :key="i"
+          :page="page"
+          :config="globalAppService.config"
+          :show-back="globalAppService.pages.value.length > 1"
+          @back="globalAppService.back()"
+        ></NavigationBar>
 
-            <TransitionGroup name="push">
-              <WebView
-                class="absolute"
-                v-for="page of pages"
-                :key="page.pageId"
-                ref="pageRefs"
-                :page="page"
-                @ready="onReady"
-              ></WebView>
-            </TransitionGroup>
+        <TransitionGroup name="push">
+          <WebView
+            class="absolute"
+            v-for="page of globalAppService.pages.value"
+            :key="page.pageId"
+            :page="page"
+            @ready="onWebViewReady"
+          ></WebView>
+        </TransitionGroup>
 
-            <TabBar
-              class="absolute left-0 bottom-0"
-              v-show="config.tabBar && lastPage.isTabBar"
-              :config="config"
-              :current="0"
-              :safe-area-inset="deviceInfo.device.safeAreaInsets.bottom"
-            ></TabBar>
+        <TabBar
+          class="absolute left-0 bottom-0"
+          v-show="globalAppService.config.tabBar && lastPage.isTabBar"
+          :config="globalAppService.config"
+          :current="0"
+          :safe-area-inset="deviceInfo.device.safeAreaInsets.bottom"
+        ></TabBar>
 
-            <HomeIndicator v-if="deviceInfo.iphonex"></HomeIndicator>
-          </template>
-        </div>
-      </div>
-      <!-- <webview
-        ref="debuggerEl"
-        class="w-2/3 h-full"
-        src="file:///Users/dskcpp/Downloads/frontend/devtools-frontend/out/Default/gen/front_end/devtools_app.html?ws=localhost:33233"
-      ></webview> -->
-      <webview ref="debuggerEl" class="w-2/3 h-full" src="about:blank"></webview>
+        <HomeIndicator v-if="deviceInfo.iphonex"></HomeIndicator>
+      </template>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ipcRenderer } from 'electron'
-import { computed, nextTick, onMounted, ref, watch, reactive } from 'vue'
-import { useService } from '../../composables/useService'
+import { computed, nextTick, onMounted, ref, watch, reactive, onUnmounted } from 'vue'
+import { globalAppService } from '../../composables/service'
 import NavigationBar from './NavigationBar.vue'
 import StatusBar from './StatusBar.vue'
 import TabBar from './TabBar.vue'
 import WebView from './WebView.vue'
 import HomeIndicator from './HomeIndicator.vue'
-import { emittedOnce } from '../../utils'
+import Service from './Service.vue'
 import { deviceInfo } from '../../composables/useDevice'
+import { useEvents } from '../../composables/useEvents'
+import { webContentsId } from '../../playground'
 
-const serviceEl = ref<Electron.WebviewTag>()
+const { on } = useEvents()
 
-const debuggerEl = ref<Electron.WebviewTag>()
+on('reload', () => {
 
-const pageRefs = ref([])
+})
 
-const { config, pages, loadAppService, back } = useService(serviceEl)
+const openDevtools = () => {
+  lastPage.value?.instance?.webView?.openDevTools()
+}
+
+const events = useEvents()
+
+events.on('open-current-webpage-devtools', openDevtools)
+
+onUnmounted(() => {
+  events.off('open-current-webpage-devtools', openDevtools)
+})
 
 const simulatorStyles = computed(() => {
   return {
@@ -94,46 +88,18 @@ const simulatorStyles = computed(() => {
   }
 })
 
-const webContentsId = reactive({ service: 0, devtools: 0, firstWeb: 0 })
+const onServiceReady = (id: number) => {
+  webContentsId.service = id
+}
 
-let devtoolsOpened = false
-
-watch(
-  () => webContentsId,
-  newValue => {
-    if (!devtoolsOpened && newValue.service && newValue.devtools && newValue.firstWeb) {
-      devtoolsOpened = true
-      ipcRenderer.send(
-        'open-devtools',
-        window.env.APP_ID,
-        newValue.service,
-        newValue.devtools,
-        newValue.firstWeb
-      )
-    }
-  },
-  { deep: true }
-)
-
-onMounted(async () => {
-  await nextTick()
-
-  const browserReady = emittedOnce(serviceEl.value!, 'dom-ready')
-  const devtoolsReady = emittedOnce(debuggerEl.value!, 'dom-ready')
-
-  Promise.all([browserReady, devtoolsReady]).then(() => {
-    loadAppService()
-    webContentsId.service = serviceEl.value!.getWebContentsId()
-    webContentsId.devtools = debuggerEl.value!.getWebContentsId()
-  })
-})
-
-const onReady = (id: number) => {
-  webContentsId.firstWeb = id
+const onWebViewReady = (id: number) => {
+  webContentsId.webviews.push(id)
 }
 
 const lastPage = computed(() => {
-  return pages.value[pages.value.length - 1]
+  const pages = globalAppService.pages.value
+  const last = pages[pages.length - 1]
+  return last
 })
 </script>
 

@@ -12,8 +12,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { getUserDataPath } from '../../utils'
+import { onMounted, ref, watch, nextTick } from 'vue'
+import { emittedOnce, getUserDataPath } from '../../utils'
 import path from 'path'
 import { usePage, PageInfo } from '../../composables/usePage'
 
@@ -25,19 +25,18 @@ const src = 'file://' + path.join(getUserDataPath(), 'SDK/index.html')
 
 const webviewEl = ref<Electron.WebviewTag>()
 
-const { mount, onSetup } = usePage(props.page, webviewEl)
+const { loadSDK, loadApp, mount } = usePage(props.page, webviewEl)
 
-onSetup(webContentsId => {
-  emit('ready', webContentsId)
+onMounted(async () => {
+  await nextTick()
+
+  await emittedOnce(webviewEl.value!, 'dom-ready')
+
+  await loadSDK()
+  await loadApp()
+
+  mount(props.page.path)
+
+  emit('ready', webviewEl.value!.getWebContentsId())
 })
-
-watch(
-  () => props.page.path,
-  newValue => {
-    if (newValue !== 'preload') {
-      mount(newValue)
-    }
-  },
-  { immediate: true }
-)
 </script>

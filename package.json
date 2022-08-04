@@ -18,24 +18,23 @@
     "node": ">=14.17.0"
   },
   "devDependencies": {
-    "@evoker/cli": "^0.6.1",
+    "@evoker/cli": "^0.7.0",
     "@iconify-json/ep": "^1.1.6",
     "@types/ws": "^8.5.3",
     "@vitejs/plugin-vue": "^2.3.3",
-    "autoprefixer": "^10.4.7",
-    "electron": "^19.0.8",
-    "electron-builder": "^23.1.0",
+    "autoprefixer": "^10.4.8",
+    "electron": "^19.0.10",
+    "electron-builder": "^23.3.3",
+    "execa": "^6.1.0",
     "postcss": "^8.4.14",
     "rollup-plugin-copy": "^3.4.0",
-    "tailwindcss": "^3.1.6",
+    "tailwindcss": "^3.1.7",
     "typescript": "^4.7.4",
-    "unplugin-auto-import": "^0.9.4",
-    "unplugin-icons": "^0.14.7",
-    "unplugin-vue-components": "^0.21.1",
-    "vite": "^2.9.13",
-    "vite-plugin-electron": "^0.8.0",
+    "unplugin-element-plus": "^0.4.1",
+    "vite": "^2.9.14",
+    "vite-plugin-electron": "^0.8.4",
     "vue": "^3.2.37",
-    "vue-tsc": "^0.38.3"
+    "vue-tsc": "^0.38.9"
   },
   "env": {
     "VITE_DEV_SERVER_HOST": "127.0.0.1",
@@ -49,13 +48,14 @@
     "vue"
   ],
   "dependencies": {
-    "@evoker/shared": "^0.6.1",
+    "@element-plus/icons-vue": "^2.0.6",
+    "@evoker/shared": "^0.7.0",
     "@vue/shared": "^3.2.37",
     "adm-zip": "^0.5.9",
     "dayjs": "^1.11.4",
-    "electron-store": "^8.0.2",
-    "element-plus": "^2.2.9",
-    "evoker": "^0.6.1",
+    "electron-store": "^8.1.0",
+    "element-plus": "^2.2.12",
+    "evoker": "^0.7.0",
     "ws": "^8.8.1"
   }
 }

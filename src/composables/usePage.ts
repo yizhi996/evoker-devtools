@@ -1,8 +1,10 @@
 import { Ref, watch, ref } from 'vue'
-import { Bridge, useBridge } from './useBridge'
-import { globalAppService, AppStyle } from './useService'
-import { emittedOnce, webviewLoadScript, webviewLoadStyle } from '../utils'
+import { Bridge } from './bridge'
+import { globalAppService } from './service'
+import { webviewLoadScript, webviewLoadStyle } from '../utils'
 import { ipcRenderer } from 'electron'
+import { useEvents } from './useEvents'
+import { AppStyle } from '../config'
 
 export interface PageInfo {
   pageId: number
@@ -18,18 +20,17 @@ export interface PageInfo {
 type PageOnSetupCallback = (webContentsId: number) => void
 
 export interface Page extends PageInfo {
-  webView: Ref<WebView | undefined>
+  webView: Ref<Electron.WebviewTag | undefined>
   bridge: Bridge
   mount: (path: string) => void
   publishOnShow: () => void
   publishOnHide: () => void
   publishOnUnload: () => void
-  onSetup: (callback: PageOnSetupCallback) => void
+  loadSDK: () => void
+  loadApp: () => void
 }
 
-export interface WebView extends Electron.WebviewTag {}
-
-export function usePage(pageInfo: PageInfo, webviewEl: Ref<WebView | undefined>): Page {
+export function usePage(pageInfo: PageInfo, webviewEl: Ref<Electron.WebviewTag | undefined>): Page {
   const service = globalAppService!
 
   const ready = ref(false)
@@ -42,24 +43,22 @@ export function usePage(pageInfo: PageInfo, webviewEl: Ref<WebView | undefined>)
       if (newValue.filter(Boolean).length === 2) {
         ipcRenderer.send(
           'set-webview-contents-id',
-          window.env.APP_ID,
+          window.project.appId,
           webviewEl.value?.getWebContentsId()
         )
       }
     }
   )
 
-  let setupCallback: PageOnSetupCallback | null
-
   const page: Page = {
     ...pageInfo,
     webView: webviewEl,
-    bridge: useBridge(webviewEl),
     mount: (path: string) => {
       mounted.value = true
 
       page.path = path
-      service.bridge.subscribeHandler('PAGE_BEGIN_MOUNT', {
+      
+      globalAppService.bridge?.subscribeHandler('PAGE_BEGIN_MOUNT', {
         pageId: page.pageId,
         tabIndex: 0,
         fromTabItemTap: false,
@@ -70,7 +69,7 @@ export function usePage(pageInfo: PageInfo, webviewEl: Ref<WebView | undefined>)
     publishOnShow: () => {
       ipcRenderer.send(
         'set-webview-contents-id',
-        window.env.APP_ID,
+        window.project.appId,
         webviewEl.value?.getWebContentsId()
       )
       page.bridge.subscribeHandler('PAGE_ON_SHOW', { pageId: page.pageId })
@@ -81,38 +80,40 @@ export function usePage(pageInfo: PageInfo, webviewEl: Ref<WebView | undefined>)
     publishOnUnload: () => {
       page.bridge.subscribeHandler('PAGE_ON_UNLOAD', { pageId: page.pageId })
     },
-    onSetup: (callback: PageOnSetupCallback) => {
-      setupCallback = callback
+    loadSDK: async () => {
+      const webview = webviewEl.value
+      if (!webview) {
+        return
+      }
+
+      page.bridge = new Bridge(webview)
+
+      webview.executeJavaScript(
+        `window.webViewId = ${page.pageId}
+        globalThis.__Config = { 
+          appName: '', 
+          appIcon: '',
+          platform: 'devtools', 
+          env: 'webview',
+          webViewId: ${page.pageId} }`
+      )
+      await webviewLoadScript(webview, './devtools.global.js')
+      await webviewLoadScript(webview, './webview.global.js')
+
+      ready.value = true
+    },
+    loadApp: async () => {
+      const webview = webviewEl.value
+      if (!webview) {
+        return
+      }
+      await webviewLoadStyle(webview, `../App/${window.project.appId}/dist/style.css`)
     }
   }
 
   pageInfo.instance = page
 
-  const stop = watch(
-    () => webviewEl.value,
-    async webview => {
-      if (webview) {
-        await emittedOnce(webview, 'dom-ready')
-
-        webview.executeJavaScript(
-          `window.webViewId = ${page.pageId}
-          globalThis.__Config = { 
-            appName: '', 
-            appIcon: '',
-            platform: 'devtools', 
-            env: 'webview',
-            webViewId: ${page.pageId} }`
-        )
-        await webviewLoadScript(webview, './devtools.global.js')
-        await webviewLoadScript(webview, './webview.global.js')
-        await webviewLoadStyle(webview, `../App/${service.config.appId}/dist/style.css`)
-
-        setupCallback && setupCallback(webview.getWebContentsId())
-        ready.value = true
-        stop()
-      }
-    }
-  )
+  const { on } = useEvents()
 
   return page
 }

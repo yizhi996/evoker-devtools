@@ -1,9 +1,17 @@
-import { app, BrowserWindow, shell, ipcMain, webContents, dialog } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  shell,
+  ipcMain,
+  webContents,
+  dialog,
+  Menu,
+  nativeTheme
+} from 'electron'
 import { release } from 'os'
 import { join } from 'path'
 import './store'
 import './menu'
-import { createWebSocketClient } from './server/dev'
 import './project'
 import './devtools'
 
@@ -34,8 +42,6 @@ const preload = join(__dirname, '../preload/index.js')
 const url = `http://${process.env['VITE_DEV_SERVER_HOST']}:${process.env['VITE_DEV_SERVER_PORT']}`
 const indexHtml = join(ROOT_PATH.dist, 'index.html')
 
-const devClient = createWebSocketClient()
-
 async function createWindow() {
   win = new BrowserWindow({
     title: 'Evoker Devtools',
@@ -58,6 +64,10 @@ async function createWindow() {
 
   // Test actively push message to the Electron-Renderer
   win.webContents.on('did-finish-load', () => {
+    win.webContents.send('init_env', {
+      DESKTOP_PATH: app.getPath('desktop'),
+      USER_DATA_PATH: app.getPath('userData')
+    })
     win?.webContents.send('main-process-message', new Date().toLocaleString())
   })
 
@@ -90,46 +100,4 @@ app.on('activate', () => {
   } else {
     createWindow()
   }
-})
-
-// new window example arg: new windows url
-ipcMain.handle('open-win', (event, arg) => {
-  const childWindow = new BrowserWindow({
-    webPreferences: {
-      preload
-    }
-  })
-
-  if (app.isPackaged) {
-    childWindow.loadFile(indexHtml, { hash: arg })
-  } else {
-    childWindow.loadURL(`${url}/#${arg}`)
-    // childWindow.webContents.openDevTools({ mode: "undocked", activate: true })
-  }
-})
-
-ipcMain.handle('get-app-path', event => {
-  const names: any[] = [
-    'home',
-    'appData',
-    'userData',
-    'cache',
-    'temp',
-    'exe',
-    'module',
-    'desktop',
-    'documents',
-    'downloads',
-    'music',
-    'pictures',
-    'videos',
-    'logs',
-    'crashDumps'
-  ]
-  const result: Record<string, string> = {}
-  for (const i in names) {
-    const name = names[i]
-    result[name] = app.getPath(name)
-  }
-  return result
 })

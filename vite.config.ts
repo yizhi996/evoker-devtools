@@ -1,20 +1,21 @@
 import { rmSync } from 'fs'
-import { join } from 'path'
+import { join, resolve } from 'path'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import electron from 'vite-plugin-electron'
 import pkg from './package.json'
-import AutoImport from 'unplugin-auto-import/vite'
-import Components from 'unplugin-vue-components/vite'
-import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
-import Icons from 'unplugin-icons/vite'
-import IconsResolver from 'unplugin-icons/resolver'
 import copy from 'rollup-plugin-copy'
+import ElementPlus from 'unplugin-element-plus/vite'
 
 rmSync('dist', { recursive: true, force: true }) // v14.14.0
 
+const alias = { '@shared': resolve('electron/shared') }
+
 // https://vitejs.dev/config/
 export default defineConfig({
+  resolve: {
+    alias
+  },
   plugins: [
     vue({
       template: {
@@ -27,6 +28,9 @@ export default defineConfig({
       main: {
         entry: 'electron/main/index.ts',
         vite: {
+          resolve: {
+            alias
+          },
           build: {
             outDir: 'dist/electron/main'
           },
@@ -51,20 +55,7 @@ export default defineConfig({
       // Enables use of Node.js API in the Renderer-process
       renderer: {}
     }),
-    AutoImport({
-      resolvers: [ElementPlusResolver(), IconsResolver({ prefix: 'Icon' })]
-    }),
-    Components({
-      resolvers: [
-        ElementPlusResolver(),
-        IconsResolver({
-          enabledCollections: ['ep']
-        })
-      ]
-    }),
-    Icons({
-      autoInstall: true
-    })
+    ElementPlus()
   ],
   server: {
     host: pkg.env.VITE_DEV_SERVER_HOST,

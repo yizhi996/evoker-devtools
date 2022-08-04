@@ -4,9 +4,9 @@
     :style="{ 'background-color': page.style.navigationBarBackgroundColor }"
   >
     <div v-if="showBack" class="absolute left-5" @click="onBack">
-      <el-icon :size="20"><i-ep-arrow-left-bold /></el-icon>
+      <el-icon :size="20" :color="page.style.navigationBarTextStyle"><ArrowLeftBold /></el-icon>
     </div>
-    <span :style="{ color: page.style.navigationBarTextStyle }">{{
+    <span class="text-lg" :style="{ color: page.style.navigationBarTextStyle }">{{
       page.style.navigationBarTitleText
     }}</span>
   </div>
@@ -14,7 +14,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { AppConfig, PageInfo } from '../../composables/useService'
+import { AppConfig } from '../../config'
+import { PageInfo } from '../../composables/usePage'
 
 const emit = defineEmits(['back'])
 

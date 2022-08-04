@@ -1,5 +1,5 @@
 import { ipcRenderer } from 'electron'
-import { globalAppService } from '../composables/useService'
+import { globalAppService } from '../composables/service'
 
 const apis: { [x: string]: Function } = {
   navigateTo,
