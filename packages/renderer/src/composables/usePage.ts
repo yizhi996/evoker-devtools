@@ -2,7 +2,6 @@ import { Ref, watch, ref } from 'vue'
 import { Bridge } from '../playground/bridge'
 import { globalAppService } from '../playground/service'
 import { webviewLoadScript, webviewLoadStyle } from '../utils'
-import { ipcRenderer } from 'electron'
 import { useEvents } from './useEvents'
 import { AppStyle } from '../config'
 import { useDevJSSDK } from '../env'
@@ -16,6 +15,7 @@ export interface PageInfo {
   width: number
   height: number
   instance?: Page
+  css?: string
 }
 
 export interface Page extends PageInfo {
@@ -104,7 +104,12 @@ export function usePage(pageInfo: PageInfo, webviewEl: Ref<Electron.WebviewTag |
       if (!webview) {
         return
       }
-      await webviewLoadStyle(webview, `../App/${window.project.appId}/dist/style.css`)
+      for (const css of globalAppService.config!.chunkCSS) {
+        await webviewLoadStyle(webview, `../App/${window.project.appId}/dist/${css}`)
+      }
+      if (pageInfo.css) {
+        await webviewLoadStyle(webview, `../App/${window.project.appId}/dist/${pageInfo.css}`)
+      }
     },
   }
 

@@ -128,6 +128,7 @@ export class AppService {
       top: navigationBarHeight,
       width: deviceInfo.device.width,
       height: deviceInfo.device.height - navigationBarHeight - tabBarHeight,
+      css: page.css,
     }
     return instance
   }

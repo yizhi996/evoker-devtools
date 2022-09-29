@@ -6,12 +6,14 @@ export interface AppConfig {
   pages: AppPageInfo[]
   window?: AppStyle
   tabBar?: AppTabBar
+  chunkCSS: string[]
 }
 
 export interface AppPageInfo {
   path: string
   component: string
   style?: AppStyle
+  css?:string
 }
 
 export interface AppStyle {
