@@ -1,4 +1,0 @@
-export const enum Events {
-  OPEN_DIRECTORY_PROJECT = 'OPEN_DIRECTORY_PROJECT',
-  OPEN_PROJECT = 'OPEN_PROJECT'
-}
