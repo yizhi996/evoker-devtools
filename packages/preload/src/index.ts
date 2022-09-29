@@ -17,16 +17,13 @@ export const API = {
     ipcRenderer.on(Events.OPEN_PROJECT, callback),
   onReload: (callback: (event: IpcRendererEvent) => void) =>
     ipcRenderer.on(Events.RELOAD, callback),
-  onDeviceChange: (callback: (event: IpcRendererEvent, command: string, value: any) => void) =>
-    ipcRenderer.on(Events.DEVICE_MENU_COMMAND, callback),
-  offDeviceChange: (callback: (event: IpcRendererEvent, command: string, value: any) => void) =>
-    ipcRenderer.off(Events.DEVICE_MENU_COMMAND, callback),
   openDevtools: (appId: string, service: number, devtools: number, webview: number) =>
     ipcRenderer.send(Events.OPEN_DEVTOOLS, appId, service, devtools, webview),
   setWebViewContentsId: (appId: string, webContentsId: number) =>
     ipcRenderer.send(Events.SET_WEBVIEW_CONTENTS_ID, appId, webContentsId),
   getStorageValue: (key: string) => ipcRenderer.invoke(Events.GET_STORE_VALUE, key),
-  showDeviceMenu: () => ipcRenderer.send(Events.SHOW_DEVICE_MENU),
+  setStorageValue: (key: string, value: unknown) =>
+    ipcRenderer.invoke(Events.SET_STORE_VALUE, key, value),
   selectProjectDestDir: () => ipcRenderer.invoke(Events.SELECT_PROJECT_DESTINATION_DIRECTORY),
   openDirProject: () => ipcRenderer.invoke(Events.OPEN_DIRECTORY_PROJECT),
   openProject: (path: string) => ipcRenderer.send(Events.OPEN_PROJECT, path),

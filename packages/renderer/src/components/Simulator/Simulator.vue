@@ -10,8 +10,7 @@
       ></Service>
       <template v-if="globalAppService.pages.value.length">
         <StatusBar
-          :safe-area-inset="deviceInfo.device.safeAreaInsets.top"
-          :have-notch="deviceInfo.iphonex"
+          :device="deviceInfo.device"
           :style="{
             'background-color': lastPage.style.navigationBarBackgroundColor,
           }"
@@ -43,7 +42,7 @@
           :safe-area-inset="deviceInfo.device.safeAreaInsets.bottom"
         ></TabBar>
 
-        <HomeIndicator v-if="deviceInfo.iphonex"></HomeIndicator>
+        <HomeIndicator v-if="deviceInfo.device.haveHomeIndicator"></HomeIndicator>
       </template>
     </div>
   </div>
@@ -58,7 +57,7 @@ import TabBar from './TabBar.vue'
 import WebView from './WebView.vue'
 import HomeIndicator from './HomeIndicator.vue'
 import Service from './Service.vue'
-import { deviceInfo } from '../../composables/useDevice'
+import { deviceInfo } from '../../device'
 import { useEvents } from '../../composables/useEvents'
 import { webContentsId } from '../../playground'
 import { Events } from '#shared'
@@ -71,7 +70,7 @@ const simulatorStyles = computed(() => {
   return {
     width: `${deviceInfo.device.width}px`,
     height: `${deviceInfo.device.height}px`,
-    'border-radius': `${deviceInfo.iphonex ? 30 : 0}px`,
+    'border-radius': `${deviceInfo.device.haveHomeIndicator ? 30 : 0}px`,
     transform: `scale(${deviceInfo.scale / 100})`,
     'transform-origin': '50% 0',
     'margin-bottom': `${window.innerHeight - 40 - deviceInfo.device.height - 44}px`,

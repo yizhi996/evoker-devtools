@@ -2,13 +2,13 @@
   <div class="p-20 flex w-full h-full flex-col select-none">
     <template v-if="!showCreator">
       <div class="space-x-10">
-        <el-button
+        <!-- <el-button
           type="primary"
           size="large"
           icon="plus"
           @click="createProject"
           >创建</el-button
-        >
+        > -->
         <el-button
           type="primary"
           size="large"

@@ -3,7 +3,7 @@ import App from './App.vue'
 import './api'
 import './tailwind.css'
 import elementUI from './element-ui'
-import { initialize } from './composables/useDevice'
+import { initialize } from './device'
 import { useEvents } from './composables/useEvents'
 import { Events } from '#shared'
 import { setUseDevJSSDK } from './env'
@@ -27,7 +27,7 @@ window.electronAPI.onReload(() => {
   dispatch(Events.RELOAD)
 })
 
-initialize().then(() => {})
+initialize()
 
 app.use(elementUI)
 
