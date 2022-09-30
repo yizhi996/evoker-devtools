@@ -1,6 +1,6 @@
 import { app } from 'electron'
-import * as fs from 'fs'
-import * as path from 'path'
+import fs from 'fs'
+import path from 'path'
 import AdmZip from 'adm-zip'
 
 export async function unpackSDK() {
@@ -10,7 +10,7 @@ export async function unpackSDK() {
     const zip = new AdmZip(filePath)
     zip.extractAllTo(dest, true)
   }
-  
+
   const devtoolsFilePath = path.resolve(__dirname, 'assets/SDK/devtools.global.prod.js')
   if (fs.existsSync(devtoolsFilePath)) {
     fs.copyFileSync(devtoolsFilePath, path.join(dest, 'devtools.global.prod.js'))

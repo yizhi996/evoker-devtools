@@ -3,6 +3,7 @@ lockfileVersion: 5.4
 specifiers:
   '@element-plus/icons-vue': ^2.0.9
   '@types/adm-zip': ^0.5.0
+  '@types/node': ^18.7.23
   '@types/ws': ^8.5.3
   '@typescript-eslint/eslint-plugin': 5.38.0
   '@vitejs/plugin-vue': 3.1.0
@@ -21,6 +22,7 @@ specifiers:
   eslint-plugin-vue: 9.5.1
   execa: 5.1.1
   happy-dom: 6.0.4
+  ip: ^1.1.8
   nano-staged: 0.8.0
   playwright: 1.26.0
   postcss: ^8.4.16
@@ -44,6 +46,7 @@ dependencies:
 devDependencies:
   '@element-plus/icons-vue': 2.0.9_vue@3.2.39
   '@types/adm-zip': 0.5.0
+  '@types/node': 18.7.23
   '@types/ws': 8.5.3
   '@typescript-eslint/eslint-plugin': 5.38.0_7ilbxdl5iguzcjriqqcg2m5cku
   '@vitejs/plugin-vue': 3.1.0_vite@3.1.3+vue@3.2.39
@@ -61,6 +64,7 @@ devDependencies:
   eslint-plugin-vue: 9.5.1_eslint@8.24.0
   execa: 5.1.1
   happy-dom: 6.0.4
+  ip: 1.1.8
   nano-staged: 0.8.0
   playwright: 1.26.0
   postcss: 8.4.16
@@ -316,7 +320,7 @@ packages:
   /@types/concat-stream/1.6.1:
     resolution: {integrity: sha512-eHE4cQPoj6ngxBZMvVf6Hw7Mh4jMW4U9lpGmS5GBPB9RYxlFg+CHaVN7ErNY4W9XfLIEn20b4VDYaIrbq0q4uA==}
     dependencies:
-      '@types/node': 8.10.66
+      '@types/node': 18.7.23
     dev: true
 
   /@types/debug/4.1.7:
@@ -328,7 +332,7 @@ packages:
   /@types/form-data/0.0.33:
     resolution: {integrity: sha512-8BSvG1kGm83cyJITQMZSulnl6QV8jqAGreJsc5tPu1Jq0vTSOiY/k24Wx82JRpWwZSqrala6sd5rWi6aNXvqcw==}
     dependencies:
-      '@types/node': 8.10.66
+      '@types/node': 18.7.23
     dev: true
 
   /@types/fs-extra/9.0.13:
@@ -353,7 +357,7 @@ packages:
   /@types/keyv/3.1.4:
     resolution: {integrity: sha512-BQ5aZNSCpj7D6K2ksrRCTmKRLEpnPvWDiLPfoGyhZ++8YtiK9d/3DBKPJgry359X/P1PfruyYwvnvwFjuEiEIg==}
     dependencies:
-      '@types/node': 16.11.62
+      '@types/node': 18.7.23
     dev: true
 
   /@types/lodash-es/4.17.6:
@@ -406,7 +410,7 @@ packages:
   /@types/responselike/1.0.0:
     resolution: {integrity: sha512-85Y2BjiufFzaMIlvJDvTTB8Fxl2xfLo4HgmHzVBz08w4wDePCTjYw66PdrolO0kzli3yam/YCgRufyo1DdQVTA==}
     dependencies:
-      '@types/node': 16.11.62
+      '@types/node': 18.7.23
     dev: true
 
   /@types/semver/7.3.12:
@@ -2643,6 +2647,10 @@ packages:
   /ini/2.0.0:
     resolution: {integrity: sha512-7PnF4oN3CvZF23ADhA5wRaYEQpJ8qygSkbtTXWBeXWXmEVRXK+1ITciHWwHhsjv1TmW0MgacIv6hEi5pX5NQdA==}
     engines: {node: '>=10'}
+    dev: true
+
+  /ip/1.1.8:
+    resolution: {integrity: sha512-PuExPYUiu6qMBQb4l06ecm6T6ujzhmh+MeJcW9wa89PoAz5pvd4zPgN5WJV104mb6S2T1AwNIAaB70JNrLQWhg==}
     dev: true
 
   /is-binary-path/2.1.0:
