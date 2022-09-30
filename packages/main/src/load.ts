@@ -4,10 +4,15 @@ import * as path from 'path'
 import AdmZip from 'adm-zip'
 
 export async function unpackSDK() {
-  const fp = path.resolve(__dirname, 'assets/SDK/evoker-sdk.evpkg')
-  console.log(app.getPath('userData'))
-  if (fs.existsSync(fp)) {
-    const zip = new AdmZip(fp)
-    zip.extractAllTo(path.join(app.getPath('userData'), '/SDK'), true)
+  const filePath = path.resolve(__dirname, 'assets/SDK/evoker-sdk.evpkg')
+  const dest = path.join(app.getPath('userData'), '/SDK')
+  if (fs.existsSync(filePath)) {
+    const zip = new AdmZip(filePath)
+    zip.extractAllTo(dest, true)
+  }
+  
+  const devtoolsFilePath = path.resolve(__dirname, 'assets/SDK/devtools.global.prod.js')
+  if (fs.existsSync(devtoolsFilePath)) {
+    fs.copyFileSync(devtoolsFilePath, path.join(dest, 'devtools.global.prod.js'))
   }
 }

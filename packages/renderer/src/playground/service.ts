@@ -62,7 +62,7 @@ export class AppService {
     )
 
     const ext = useDevJSSDK ? 'js' : 'prod.js'
-    await webviewLoadScript(el, './devtools.global.js')
+    await webviewLoadScript(el, `./devtools.global.${ext}`)
     await webviewLoadScript(el, `./vue.runtime.global.${ext}`)
     await webviewLoadScript(el, `./evoker.global.${ext}`)
   }
