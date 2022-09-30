@@ -16,9 +16,9 @@ export interface PublishArgs {
   webViewId: number
 }
 
-const log = msg => console.log(`[Evoker devtools] ${msg}`)
+const log = (msg: any) => console.log(`[Evoker devtools] ${msg}`)
 
-const warn = msg => console.warn(`[Evoker devtools] ${msg}`)
+const warn = (msg: any) => console.warn(`[Evoker devtools] ${msg}`)
 
 export const enum Commands {
   APP_SERVICE_INVOKE = 'APP_SERVICE_INVOKE',
@@ -127,15 +127,19 @@ export class MessageCenter {
       errMsg,
       data: data || {},
     })
-    bridge.readyState == bridge.OPEN &&
+    bridge.readyState === bridge.OPEN &&
       bridge.send(JSON.stringify({ exec: 'INVOKE_CALLBACK', result }))
+  }
+
+  getClient(protocol: Protocol, sub: string = '') {
+    return this.clients.get(protocol)?.get(sub) as Bridge | undefined
   }
 
   private clientToBridge(client: ws.WebSocket) {
     const [main] = splitProtocol(client)
     if (main === Protocol.APPSERVICE || main === Protocol.WEBVIEW) {
       const bridge = client as Bridge
-      if (bridge.invokeCallbackSuccess) {
+      if ('invokeCallbackSuccess' in bridge) {
         return bridge
       }
       bridge.invokeCallbackSuccess = (args: InvokeArgs, result?: Record<string, any>) => {
@@ -145,7 +149,7 @@ export class MessageCenter {
         this.invokeCallback(bridge, args.event, args.callbackId, errMsg)
       }
       bridge.subscribeHandler = (args: PublishArgs) => {
-        bridge.readyState == bridge.OPEN &&
+        bridge.readyState === bridge.OPEN &&
           bridge.send(JSON.stringify({ exec: 'SUBSCRIBE_HANDLER', args }))
       }
     }
@@ -158,7 +162,7 @@ export class MessageCenter {
 
     const [main, sub] = splitProtocol(client)
 
-    const group = this.clients.get(main)
+    const group = this.clients.get(main)!
     group.set(sub, client)
 
     if (main === Protocol.WEBVIEW) {
@@ -275,19 +279,15 @@ export class MessageCenter {
       event === 'invokeAppServiceMethod' ||
       event === 'callbackWebViewMethod'
     ) {
-      const service = this.clients.get(Protocol.APPSERVICE).get('') as Bridge
-      service && service.subscribeHandler(args)
+      this.getClient(Protocol.APPSERVICE)?.subscribeHandler(args)
     } else if (event === 'callbackAppServiceMethod' || event === 'invokeWebViewMethod') {
-      const page = this.clients.get(Protocol.WEBVIEW).get(`${webViewId}`) as Bridge
-      page && page.subscribeHandler(args)
+      this.getClient(Protocol.WEBVIEW, `${webViewId}`)?.subscribeHandler(args)
     } else if (event === 'WEBVIEW_FIRST_RENDER') {
-      const service = this.clients.get(Protocol.APPSERVICE).get('') as Bridge
-      service &&
-        service.subscribeHandler({
-          event: 'PAGE_ON_READY',
-          params: JSON.stringify({ pageId: webViewId }),
-          webViewId: 0,
-        })
+      this.getClient(Protocol.APPSERVICE)?.subscribeHandler({
+        event: 'PAGE_ON_READY',
+        params: JSON.stringify({ pageId: webViewId }),
+        webViewId: 0,
+      })
     }
   }
 

@@ -23,10 +23,9 @@ ipcMain.on(Events.OPEN_DEVTOOLS, (event, appId, serviceId, devtoolsId, webId) =>
 
   function onMessage(event: Electron.Event, method: string, params: any) {
     const project = projects.get(appId)
-    if (project) {
-      const bridge = project.messageCenter.clients.get(Protocol.APPSERVICEDEVTOOLS).get('')
-      bridge?.send(JSON.stringify({ method, params }))
-    }
+    project?.messageCenter
+      .getClient(Protocol.APPSERVICEDEVTOOLS)
+      ?.send(JSON.stringify({ method, params }))
   }
 
   const webview = webContents.fromId(webId)
@@ -38,7 +37,7 @@ ipcMain.on(Events.OPEN_DEVTOOLS, (event, appId, serviceId, devtoolsId, webId) =>
 
   firstWebContentsId = webId
 
-  devtools.loadURL('devtools://devtools/bundled/devtools_app.html?ws=localhost:33233')
+  devtools.loadURL('devtools://devtools/bundled/devtools_app.html?ws=localhost:33233&theme=dark')
 
   service.debugger.addListener('message', onMessage)
 })
@@ -46,10 +45,9 @@ ipcMain.on(Events.OPEN_DEVTOOLS, (event, appId, serviceId, devtoolsId, webId) =>
 ipcMain.on(Events.SET_WEBVIEW_CONTENTS_ID, async (_, appId, targetId) => {
   function onMessage(event: Electron.Event, method: string, params: any) {
     const project = projects.get(appId)
-    if (project) {
-      const bridge = project.messageCenter.clients.get(Protocol.APPSERVICEDEVTOOLS).get('')
-      bridge?.send(JSON.stringify({ method, params }))
-    }
+    project?.messageCenter
+      .getClient(Protocol.APPSERVICEDEVTOOLS)
+      ?.send(JSON.stringify({ method, params }))
   }
 
   const target = webContents.fromId(targetId)
@@ -71,9 +69,8 @@ ipcMain.on(Events.SET_WEBVIEW_CONTENTS_ID, async (_, appId, targetId) => {
     await target.debugger.sendCommand('Overlay.enable', {})
 
     const project = projects.get(appId)
-    if (project) {
-      const bridge = project.messageCenter.clients.get(Protocol.APPSERVICEDEVTOOLS).get('')
-      bridge?.send(JSON.stringify({ method: 'DOM.documentUpdated', params: {} }))
-    }
+    project?.messageCenter
+      .getClient(Protocol.APPSERVICEDEVTOOLS)
+      ?.send(JSON.stringify({ method: 'DOM.documentUpdated', params: {} }))
   }
 })
