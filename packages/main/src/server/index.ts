@@ -3,6 +3,7 @@ import path from 'path'
 import AdmZip from 'adm-zip'
 import ws from 'ws'
 import { store } from '../store'
+import ip from 'ip'
 
 const enum Methods {
   APP_INFO = '--APPINFO--',
@@ -41,7 +42,7 @@ export class ProjectDevServer {
   }
 
   private connection() {
-    this.ws = new ws.WebSocket(`ws://192.168.0.102:${this.port}`)
+    this.ws = new ws.WebSocket(`ws://${ip.address()}:${this.port}`)
 
     this.ws.on('connection', () => {
       this.retryTimes = 0
@@ -104,7 +105,6 @@ export class ProjectDevServer {
 
   private update(body: Buffer | ArrayBuffer | Buffer[]) {
     const { appId, version, files } = JSON.parse(body.toString()) as AppUpdateInfo
-    console.log(appId, this.appId, files)
     if (appId !== this.appId) {
       return
     }
@@ -134,15 +134,12 @@ export class ProjectDevServer {
     }
 
     const index = this.needUpdateFiles.indexOf(pkg)
-    console.log(dest, index)
 
     if (index > -1) {
-      console.log(`${pkg} update`)
       const zip = new AdmZip(body)
       zip.extractAllTo(dest, true)
       this.needUpdateFiles.splice(index, 1)
     }
-    console.log(this.needUpdateFiles)
     if (this.needUpdateFiles.length === 0) {
       console.log('reload')
       this.onUpdate?.()
