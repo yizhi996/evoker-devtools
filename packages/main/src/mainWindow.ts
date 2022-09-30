@@ -1,5 +1,5 @@
 import { Events } from '#shared'
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { URL } from 'url'
 import { unpackSDK } from './load'
@@ -15,6 +15,7 @@ async function createWindow() {
       webviewTag: true, // The webview tag is not recommended. Consider alternatives like an iframe or Electron's BrowserView. @see https://www.electronjs.org/docs/latest/api/webview-tag#warning
       preload: join(app.getAppPath(), 'packages/preload/dist/index.cjs'),
     },
+    titleBarStyle: 'hidden',
   })
 
   browserWindow.maximize()
@@ -70,3 +71,8 @@ export async function restoreOrCreateWindow() {
 
   window.focus()
 }
+
+ipcMain.on(Events.MAXIMIZE_WINDOW, () => {
+  const window = BrowserWindow.getAllWindows().find(w => !w.isDestroyed())
+  window?.maximize()
+})

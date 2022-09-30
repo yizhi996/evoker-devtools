@@ -28,6 +28,7 @@ export const API = {
   openDirProject: () => ipcRenderer.invoke(Events.OPEN_DIRECTORY_PROJECT),
   openProject: (path: string) => ipcRenderer.send(Events.OPEN_PROJECT, path),
   showProjectMenu: (project: Project) => ipcRenderer.send(Events.SHOW_PROJECT_MENU, project),
+  maximizeWindow: () => ipcRenderer.send(Events.MAXIMIZE_WINDOW),
 }
 
 contextBridge.exposeInMainWorld('electronAPI', API)

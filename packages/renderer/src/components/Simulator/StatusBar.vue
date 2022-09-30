@@ -3,7 +3,7 @@
     class="w-full flex items-center"
     :style="{ height }"
   >
-    <span class="ml-6 text-sm cursor-default">{{ date }}</span>
+    <span class="text-black ml-6 text-sm cursor-default">{{ date }}</span>
     <Notch v-if="device.haveNotch"></Notch>
     <DynamicIsland v-else-if="device.haveDynamicIsland"></DynamicIsland>
   </div>

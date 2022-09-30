@@ -13,7 +13,7 @@ let currentPageWebContentesId = 0
 
 export { serviceWebContentesId, devtoolsWebContentesId, currentPageWebContentesId }
 
-ipcMain.on(Events.OPEN_DEVTOOLS, (event, appId, serviceId, devtoolsId, webId) => {
+ipcMain.on(Events.OPEN_DEVTOOLS, async (event, appId, serviceId, devtoolsId, webId) => {
   const service = webContents.fromId(serviceId)
   const devtools = webContents.fromId(devtoolsId)
 
@@ -37,8 +37,13 @@ ipcMain.on(Events.OPEN_DEVTOOLS, (event, appId, serviceId, devtoolsId, webId) =>
 
   firstWebContentsId = webId
 
-  devtools.loadURL('devtools://devtools/bundled/devtools_app.html?ws=localhost:33233&theme=dark')
-
+  devtools.loadURL('devtools://devtools/bundled/devtools_app.html?ws=localhost:33233')
+  // force dark mode
+  devtools.executeJavaScript(
+    `localStorage.setItem('uiTheme', 'dark'); setTimeout(()=> {
+      document.documentElement.classList.toggle('-theme-with-dark-background', true);
+    }, 100)`,
+  )
   service.debugger.addListener('message', onMessage)
 })
 

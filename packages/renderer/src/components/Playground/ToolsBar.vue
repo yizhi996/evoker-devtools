@@ -1,7 +1,8 @@
 <template>
   <div class="w-full flex items-center border-b px-3">
     <el-menu
-      class="w-full h-10"
+      class="w-full h-11"
+      style="border: none"
       mode="horizontal"
       active-text-color="transparency"
       @select="handleSelect"

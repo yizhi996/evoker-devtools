@@ -1,7 +1,7 @@
 <template>
   <div class="w-full h-full">
-    <ToolsBar class="h-10"></ToolsBar>
-    <div class="inline-flex w-full" style="height: calc(100% - 40px)">
+    <ToolsBar class="h-11"></ToolsBar>
+    <div class="inline-flex w-full" style="height: calc(100% - 44px)">
       <Simulator class="w-1/3 h-full" style="min-width: 400px"></Simulator>
       <Devtools class="w-2/3 h-full"></Devtools>
     </div>
